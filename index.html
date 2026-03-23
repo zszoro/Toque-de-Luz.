@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toque de Luz - Agendamento de Reiki e Terapias</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="container">
+                <div class="logo">
+                    <h1>✨ Toque de Luz</h1>
+                </div>
+                <ul class="nav-links">
+                    <li><a href="#home">Início</a></li>
+                    <li><a href="#services">Serviços</a></li>
+                    <li><a href="#contact">Contato</a></li>
+                    <li>
+                        <a href="#" id="cartButton" class="cart-button" onclick="toggleCart(event)">
+                            🛒 Carrinho <span id="cartCount" class="cart-count">0</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <h2>Relaxe e Renove</h2>
+            <p>Experimente a teperapia do reiki</p>
+            <a href="#services" class="cta-button">Ver Serviços</a>
+        </div>
+    </section>
+
+    <!-- Infinite Image Carousel -->
+    <section class="image-carousel">
+        <div class="carousel-track">
+            <div class="carousel-images">
+                <img src="https://i.imgur.com/gxyM7uY.png" alt="Toque de Luz - Ambiente 1">
+                <img src="https://i.imgur.com/8n6p8k8.png" alt="Toque de Luz - Ambiente 2">
+                <img src="https://i.imgur.com/94i7c79.png" alt="Toque de Luz - Ambiente 3">
+                <img src="https://i.imgur.com/9vfedxR.png" alt="Toque de Luz - Ambiente 4">
+                <img src="https://i.imgur.com/FbaqlNN.png" alt="Toque de Luz - Ambiente 5">
+            </div>
+            <!-- Duplicate for seamless loop -->
+            <div class="carousel-images">
+                <img src="https://i.imgur.com/gxyM7uY.png" alt="Toque de Luz - Ambiente 1">
+                <img src="https://i.imgur.com/8n6p8k8.png" alt="Toque de Luz - Ambiente 2">
+                <img src="https://i.imgur.com/94i7c79.png" alt="Toque de Luz - Ambiente 3">
+                <img src="https://i.imgur.com/9vfedxR.png" alt="Toque de Luz - Ambiente 4">
+                <img src="https://i.imgur.com/FbaqlNN.png" alt="Toque de Luz - Ambiente 5">
+            </div>
+        </div>
+    </section>
+
+    <section id="services" class="services">
+        <div class="container">
+            <h2>Nossos Serviços</h2>
+
+            <div class="service-category">
+                <h3 class="category-title">💆‍♀️ Massagens</h3>
+                <div class="service-grid">
+                    <div class="service-card">
+                        <h4>Massagem Relaxante</h4>
+                        <p class="duration">80 minutos</p>
+                        <p class="price">R$ 80</p>
+                        <button class="add-to-cart-btn" onclick="addToCart('Massagem Relaxante', 80, '80min')">Adicionar ao Carrinho</button>
+                    </div>
+                    <div class="service-card">
+                        <h4>Massagem com Óleos Terapêuticos</h4>
+                        <p class="duration">60 minutos</p>
+                        <p class="price">R$ 100</p>
+                        <button class="add-to-cart-btn" onclick="addToCart('Massagem com Óleos Terapêuticos', 100, '60min')">Adicionar ao Carrinho</button>
+                    </div>
+                    <div class="service-card">
+                        <h4>Massagem com Equilíbrio de Chakras</h4>
+                        <p class="duration">60 minutos</p>
+                        <p class="price">R$ 100</p>
+                        <button class="add-to-cart-btn" onclick="addToCart('Massagem com Equilíbrio de Chakras', 100, '60min')">Adicionar ao Carrinho</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="service-category">
+                <h3 class="category-title">✨ Reiki</h3>
+                <div class="service-grid">
+                    <div class="service-card">
+                        <h4>Reiki Básico</h4>
+                        <p class="duration">30 minutos</p>
+                        <p class="price">R$ 60</p>
+                        <button class="add-to-cart-btn" onclick="addToCart('Reiki Básico', 60, '30min')">Adicionar ao Carrinho</button>
+                    </div>
+                    <div class="service-card">
+                        <h4>Reiki Completo</h4>
+                        <p class="duration">50 minutos</p>
+                        <p class="price">R$ 80</p>
+                        <button class="add-to-cart-btn" onclick="addToCart('Reiki Completo', 80, '50min')">Adicionar ao Carrinho</button>
+                    </div>
+                    <div class="service-card">
+                        <h4>Reiki com Aromaterapia</h4>
+                        <p class="duration">60 minutos</p>
+                        <p class="price">R$ 100</p>
+                        <button class="add-to-cart-btn" onclick="addToCart('Reiki com Aromaterapia', 100, '60min')">Adicionar ao Carrinho</button>
+                    </div>
+                    <div class="service-card">
+                        <h4>Reiki com Cristais (Equilíbrio dos Chakras)</h4>
+                        <p class="duration">60 minutos</p>
+                        <p class="price">R$ 100</p>
+                        <button class="add-to-cart-btn" onclick="addToCart('Reiki com Cristais', 100, '60min')">Adicionar ao Carrinho</button>
+                    </div>
+                    <div class="service-card">
+                        <h4>Reiki à Distância</h4>
+                        <p class="duration">30 minutos</p>
+                        <p class="price">R$ 50</p>
+                        <button class="add-to-cart-btn" onclick="addToCart('Reiki à Distância', 50, '30min')">Adicionar ao Carrinho</button>
+                    </div>
+                    <div class="service-card">
+                        <h4>Reiki para Gestantes</h4>
+                        <p class="duration">50 minutos</p>
+                        <p class="price">R$ 50</p>
+                        <button class="add-to-cart-btn" onclick="addToCart('Reiki para Gestantes', 50, '50min')">Adicionar ao Carrinho</button>
+                    </div>
+                    <div class="service-card">
+                        <h4>Reiki para PCD</h4>
+                        <p class="duration">30 minutos</p>
+                        <p class="price">R$ 60</p>
+                        <button class="add-to-cart-btn" onclick="addToCart('Reiki para PCD', 60, '30min')">Adicionar ao Carrinho</button>
+                    </div>
+                    <div class="service-card">
+                        <h4>Reiki + Quick Massagem</h4>
+                        <p class="duration">50 minutos</p>
+                        <p class="price">R$ 80</p>
+                        <button class="add-to-cart-btn" onclick="addToCart('Reiki + Quick Massagem', 80, '50min')">Adicionar ao Carrinho</button>
+                    </div>
+                    <div class="service-card">
+                        <h4>Reiki para Animais</h4>
+                        <p class="duration">20 minutos</p>
+                        <p class="price">R$ 60</p>
+                        <button class="add-to-cart-btn" onclick="addToCart('Reiki para Animais', 60, '20min')">Adicionar ao Carrinho</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="packages-section">
+                <h3 class="category-title">🎁 Pacotes Especiais</h3>
+                <div class="packages-grid">
+                    <div class="package-card">
+                        <div class="package-header">
+                            <h4>Inicial</h4>
+                            <p class="package-subtitle">Presente de Boas-Vindas</p>
+                        </div>
+                        <ul class="package-features">
+                            <li>✓ 2 Massagens Relaxantes</li>
+                            <li>✓ 1 Óleo Essencial</li>
+                            <li>✓ 1 Reiki Básico</li>
+                            <li>✓ Consulta Avaliativa Gratuita</li>
+                        </ul>
+                        <button class="package-button" onclick="addPackageToCart('inicial')">Adicionar ao Carrinho</button>
+                    </div>
+
+                    <div class="package-card featured">
+                        <div class="package-header">
+                            <h4>Bem-Estar</h4>
+                            <p class="package-subtitle">Equilíbrio e Harmonia</p>
+                        </div>
+                        <ul class="package-features">
+                            <li>✓ 3 Massagens Relaxantes</li>
+                            <li>✓ 2 Óleos Essenciais</li>
+                            <li>✓ 2 Sessões de Reiki Completo</li>
+                            <li>✓ Kit Aroma para Casa</li>
+                            <li>✓ Acompanhamento Personalizado</li>
+                        </ul>
+                        <button class="package-button" onclick="addPackageToCart('bem-estar')">Adicionar ao Carrinho</button>
+                    </div>
+
+                    <div class="package-card">
+                        <div class="package-header">
+                            <h4>Premium</h4>
+                            <p class="package-subtitle">Experiência Completa</p>
+                        </div>
+                        <ul class="package-features">
+                            <li>✓ 5 Massagens à Sua Escolha</li>
+                            <li>✓ Kit com Óleos</li>
+                            <li>✓ 3 Reiki com Cristais</li>
+                            <li>✓ 1 Quick Massagem</li>
+                            <li>✓ Acompanhamento Ilimitado por 3 Meses</li>
+                        </ul>
+                        <button class="package-button" onclick="addPackageToCart('premium')">Adicionar ao Carrinho</button>
+                    </div>
+
+                    <div class="package-card custom">
+                        <div class="package-header">
+                            <h4>Personalizado</h4>
+                            <p class="package-subtitle">Monte seu Próprio Pacote</p>
+                        </div>
+                        <p class="custom-description">Escolha os serviços que mais combinam com você e ganhe desconto especial!</p>
+                        <button class="package-button custom-button" onclick="openCustomPackageModal()">Montar Meu Pacote</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modal for Custom Package -->
+    <div id="customPackageModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCustomPackageModal()">&times;</span>
+            <h2>Monte seu Pacote Personalizado</h2>
+            <p class="modal-subtitle">Selecione os serviços que deseja incluir no seu pacote</p>
+
+            <div class="modal-services">
+                <div class="modal-category">
+                    <h3>💆‍♀️ Massagens</h3>
+                    <div class="modal-service-item">
+                        <label>
+                            <input type="checkbox" class="service-checkbox" data-name="Massagem Relaxante" data-price="80">
+                            <span>Massagem Relaxante (80min) - R$ 80</span>
+                        </label>
+                        <input type="number" class="quantity-input" min="0" max="10" value="0">
+                    </div>
+                    <div class="modal-service-item">
+                        <label>
+                            <input type="checkbox" class="service-checkbox" data-name="Massagem com Óleos Terapêuticos" data-price="100">
+                            <span>Massagem com Óleos Terapêuticos (60min) - R$ 100</span>
+                        </label>
+                        <input type="number" class="quantity-input" min="0" max="10" value="0">
+                    </div>
+                    <div class="modal-service-item">
+                        <label>
+                            <input type="checkbox" class="service-checkbox" data-name="Massagem com Equilíbrio de Chakras" data-price="100">
+                            <span>Massagem com Equilíbrio de Chakras (60min) - R$ 100</span>
+                        </label>
+                        <input type="number" class="quantity-input" min="0" max="10" value="0">
+                    </div>
+                </div>
+
+                <div class="modal-category">
+                    <h3>✨ Reiki</h3>
+                    <div class="modal-service-item">
+                        <label>
+                            <input type="checkbox" class="service-checkbox" data-name="Reiki Básico" data-price="60">
+                            <span>Reiki Básico (30min) - R$ 60</span>
+                        </label>
+                        <input type="number" class="quantity-input" min="0" max="10" value="0">
+                    </div>
+                    <div class="modal-service-item">
+                        <label>
+                            <input type="checkbox" class="service-checkbox" data-name="Reiki Completo" data-price="80">
+                            <span>Reiki Completo (50min) - R$ 80</span>
+                        </label>
+                        <input type="number" class="quantity-input" min="0" max="10" value="0">
+                    </div>
+                    <div class="modal-service-item">
+                        <label>
+                            <input type="checkbox" class="service-checkbox" data-name="Reiki com Aromaterapia" data-price="100">
+                            <span>Reiki com Aromaterapia (60min) - R$ 100</span>
+                        </label>
+                        <input type="number" class="quantity-input" min="0" max="10" value="0">
+                    </div>
+                    <div class="modal-service-item">
+                        <label>
+                            <input type="checkbox" class="service-checkbox" data-name="Reiki com Cristais" data-price="100">
+                            <span>Reiki com Cristais (60min) - R$ 100</span>
+                        </label>
+                        <input type="number" class="quantity-input" min="0" max="10" value="0">
+                    </div>
+                    <div class="modal-service-item">
+                        <label>
+                            <input type="checkbox" class="service-checkbox" data-name="Reiki à Distância" data-price="50">
+                            <span>Reiki à Distância (30min) - R$ 50</span>
+                        </label>
+                        <input type="number" class="quantity-input" min="0" max="10" value="0">
+                    </div>
+                    <div class="modal-service-item">
+                        <label>
+                            <input type="checkbox" class="service-checkbox" data-name="Reiki para Gestantes" data-price="50">
+                            <span>Reiki para Gestantes (50min) - R$ 50</span>
+                        </label>
+                        <input type="number" class="quantity-input" min="0" max="10" value="0">
+                    </div>
+                    <div class="modal-service-item">
+                        <label>
+                            <input type="checkbox" class="service-checkbox" data-name="Reiki para PCD" data-price="60">
+                            <span>Reiki para PCD (30min) - R$ 60</span>
+                        </label>
+                        <input type="number" class="quantity-input" min="0" max="10" value="0">
+                    </div>
+                    <div class="modal-service-item">
+                        <label>
+                            <input type="checkbox" class="service-checkbox" data-name="Reiki + Quick Massagem" data-price="80">
+                            <span>Reiki + Quick Massagem (50min) - R$ 80</span>
+                        </label>
+                        <input type="number" class="quantity-input" min="0" max="10" value="0">
+                    </div>
+                    <div class="modal-service-item">
+                        <label>
+                            <input type="checkbox" class="service-checkbox" data-name="Reiki para Animais" data-price="60">
+                            <span>Reiki para Animais (20min) - R$ 60</span>
+                        </label>
+                        <input type="number" class="quantity-input" min="0" max="10" value="0">
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-summary">
+                <div class="summary-row">
+                    <span>Total:</span>
+                    <span id="totalPrice" class="total-price">R$ 0</span>
+                </div>
+                <div class="summary-row discount">
+                    <span>Desconto (15%):</span>
+                    <span id="discountAmount" class="discount-amount">- R$ 0</span>
+                </div>
+                <div class="summary-row final">
+                    <span>Total com Desconto:</span>
+                    <span id="finalPrice" class="final-price">R$ 0</span>
+                </div>
+            </div>
+
+            <button class="modal-confirm-button" onclick="confirmCustomPackage()">Confirmar Pacote Personalizado</button>
+        </div>
+    </div>
+
+    <!-- Cart Sidebar -->
+    <div id="cartSidebar" class="cart-sidebar">
+        <div class="cart-header">
+            <h3>🛒 Meu Carrinho</h3>
+            <button class="close-cart" onclick="toggleCart(event)">&times;</button>
+        </div>
+        <div id="cartItems" class="cart-items">
+            <p class="empty-cart">Seu carrinho está vazio</p>
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span>Total:</span>
+                <span id="cartTotal">R$ 0,00</span>
+            </div>
+            <button class="checkout-btn" onclick="openCheckoutModal()" disabled id="checkoutBtn">Finalizar Compra</button>
+        </div>
+    </div>
+
+    <!-- Checkout Modal -->
+    <div id="checkoutModal" class="modal">
+        <div class="modal-content checkout-modal-content">
+            <span class="close" onclick="closeCheckoutModal()">&times;</span>
+            <h2>Finalizar Agendamento</h2>
+            <p class="modal-subtitle">Complete seus dados para confirmar</p>
+
+            <div class="checkout-summary">
+                <h3>Resumo do Pedido</h3>
+                <div id="checkoutItems"></div>
+                <div class="checkout-total">
+                    <span>Total:</span>
+                    <span id="checkoutTotal">R$ 0,00</span>
+                </div>
+            </div>
+
+            <form id="checkoutForm" class="booking-form">
+                <div class="form-group">
+                    <label for="checkoutName">Nome Completo *</label>
+                    <input type="text" id="checkoutName" name="name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="checkoutEmail">E-mail *</label>
+                    <input type="email" id="checkoutEmail" name="email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="checkoutPhone">Telefone *</label>
+                    <input type="tel" id="checkoutPhone" name="phone" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="checkoutDate">Data Preferencial *</label>
+                        <input type="date" id="checkoutDate" name="date" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="checkoutTime">Horário Preferencial *</label>
+                        <select id="checkoutTime" name="time" required>
+                            <option value="">Selecione...</option>
+                            <option value="09:00">09:00</option>
+                            <option value="10:30">10:30</option>
+                            <option value="12:00">12:00</option>
+                            <option value="14:00">14:00</option>
+                            <option value="15:30">15:30</option>
+                            <option value="17:00">17:00</option>
+                            <option value="18:30">18:30</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="checkoutNotes">Observações</label>
+                    <textarea id="checkoutNotes" name="notes" rows="4" placeholder="Alguma preferência ou necessidade especial?"></textarea>
+                </div>
+
+                <button type="submit" class="submit-button">Confirmar Agendamento</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content">
+            <div class="confirmation-icon">✅</div>
+            <h3>Agendamento Confirmado!</h3>
+            <div id="confirmationDetails"></div>
+            <button onclick="closeConfirmationModal()" class="reset-button">Fechar</button>
+        </div>
+    </div>
+
+    <section id="contact" class="contact">
+        <div class="container">
+            <h2>Contato</h2>
+            <div class="contact-info">
+                <div class="contact-item">
+                    <span class="icon">📍</span>
+                    <div>
+                        <h4>Endereço</h4>
+                        <p>Rua da Tranquilidade, 123 - Centro - Pindamonhangaba, SP</p>
+                    </div>
+                </div>
+                <div class="contact-item">
+                    <span class="icon">📞</span>
+                    <div>
+                        <h4>Telefone</h4>
+                        <p>(12) 99768-5503</p>
+                    </div>
+                </div>
+                <div class="contact-item">
+                    <span class="icon">✉️</span>
+                    <div>
+                        <h4>E-mail</h4>
+                        <p>pattypampas@hotmail.com</p>
+                    </div>
+                </div>
+                <div class="contact-item">
+                    <span class="icon">⏰</span>
+                    <div>
+                        <h4>Horário</h4>
+                        <p>Segunda a Sábado - 09:00 às 20:00</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Toque de Luz. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
