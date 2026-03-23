@@ -222,26 +222,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const resposta = await res.json();
 
         if (resposta.ok) {
-            document.getElementById('confirmationDetails').innerHTML = `
-                <p><strong>Nome:</strong> ${name}</p>
-                <p><strong>Total:</strong> R$ ${total.toFixed(2)}</p>
-                <p>Pedido enviado com sucesso 🚀</p>
-            `;
-
-            closeCheckoutModal();
-            document.getElementById('confirmationModal').style.display = 'block';
-            document.body.style.overflow = 'hidden';
+            alert('Pedido enviado com sucesso 🚀');
 
             cart = [];
             saveCart();
             updateCartUI();
-            checkoutForm.reset();
+            e.target.reset();
         } else {
             alert('Erro ao enviar pedido');
         }
 
     } catch (err) {
-        alert('Erro de conexão com servidor ❌');
+        alert('Erro de conexão ❌');
         console.error(err);
     }
 });
