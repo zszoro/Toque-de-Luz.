@@ -185,58 +185,26 @@ function closeConfirmationModal() {
 document.addEventListener('DOMContentLoaded', function() {
     const checkoutForm = document.getElementById('checkoutForm');
     if (checkoutForm) {
-       checkoutForm.addEventListener('submit', async function(e) {
-    e.preventDefault();
+        checkoutForm.addEventListener('submit', function(e) {
+            e.preventDefault();
 
-    const name = document.getElementById('checkoutName').value;
-    const email = document.getElementById('checkoutEmail').value;
-    const phone = document.getElementById('checkoutPhone').value;
-    const date = document.getElementById('checkoutDate').value;
-    const time = document.getElementById('checkoutTime').value;
-    const notes = document.getElementById('checkoutNotes').value;
+            // Get form values
+            const name = document.getElementById('checkoutName').value;
+            const email = document.getElementById('checkoutEmail').value;
+            const phone = document.getElementById('checkoutPhone').value;
+            const date = document.getElementById('checkoutDate').value;
+            const time = document.getElementById('checkoutTime').value;
+            const notes = document.getElementById('checkoutNotes').value;
 
-    const total = cart.reduce((sum, item) => sum + item.price, 0);
+            // Format date
+            const dateObj = new Date(date + 'T00:00:00');
+            const formattedDate = dateObj.toLocaleDateString('pt-BR', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
 
-    const pedido = {
-        nome: name,
-        email: email,
-        telefone: phone,
-        data: date,
-        hora: time,
-        itens: cart,
-        total: total,
-        observacoes: notes
-    };
-
-    console.log('📤 Enviando pedido:', pedido);
-
-    try {
-        const res = await fetch('http://localhost:3000/api/pedidos', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(pedido)
-        });
-
-        const resposta = await res.json();
-
-        if (resposta.ok) {
-            alert('Pedido enviado com sucesso 🚀');
-
-            cart = [];
-            saveCart();
-            updateCartUI();
-            e.target.reset();
-        } else {
-            alert('Erro ao enviar pedido');
-        }
-
-    } catch (err) {
-        alert('Erro de conexão ❌');
-        console.error(err);
-    }
-});
             // Get cart items summary
             const itemsList = cart.map(item => `<li>${item.name} - R$ ${item.price.toFixed(2)}</li>`).join('');
             const total = cart.reduce((sum, item) => sum + item.price, 0);
