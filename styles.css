@@ -1,1 +1,248 @@
+/* RESET */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
+/* CORES */
+:root {
+    --bg: #0d0d0d;
+    --card: #1a1a1a;
+    --primary: #00ff9d;
+    --secondary: #00c3ff;
+    --text: #ffffff;
+    --text-muted: #aaaaaa;
+}
+
+/* BODY */
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: Arial, sans-serif;
+}
+
+/* CONTAINER */
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: auto;
+}
+
+/* NAVBAR */
+.navbar {
+    background: #111;
+    padding: 15px 0;
+    border-bottom: 1px solid #222;
+}
+
+.navbar .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo h1 {
+    color: var(--primary);
+}
+
+.nav-links {
+    display: flex;
+    gap: 20px;
+    list-style: none;
+}
+
+.nav-links a {
+    color: var(--text);
+    text-decoration: none;
+}
+
+/* HERO */
+.hero {
+    text-align: center;
+    padding: 80px 20px;
+}
+
+.hero h2 {
+    font-size: 40px;
+    color: var(--primary);
+    animation: glow 2s infinite alternate;
+}
+
+/* ANIMAÇÃO GLOW */
+@keyframes glow {
+    from { text-shadow: 0 0 10px var(--primary); }
+    to { text-shadow: 0 0 25px var(--primary), 0 0 50px var(--primary); }
+}/* BOTÕES NEON */
+.add-to-cart-btn,
+.package-button,
+.checkout-btn,
+.submit-button,
+.cta-button {
+    background: transparent;
+    border: 2px solid var(--primary);
+    color: var(--primary);
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 6px;
+}
+
+.add-to-cart-btn:hover,
+.package-button:hover,
+.checkout-btn:hover,
+.submit-button:hover,
+.cta-button:hover {
+    background: var(--primary);
+    color: black;
+    box-shadow: 0 0 5px var(--primary),
+                0 0 15px var(--primary),
+                0 0 30px var(--primary),
+                0 0 60px var(--primary);
+}
+
+/* SERVIÇOS */
+.services {
+    padding: 40px 0;
+}
+
+.service-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+/* CARDS */
+.service-card,
+.package-card {
+    backdrop-filter: blur(10px);
+    background: rgba(26, 26, 26, 0.7);
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #222;
+    transition: all 0.3s ease;
+}
+
+.service-card:hover,
+.package-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    border-color: var(--primary);
+}
+
+/* TEXTO */
+.price {
+    color: var(--primary);
+    font-size: 20px;
+    margin: 10px 0;
+}
+
+.duration {
+    color: var(--text-muted);
+}
+
+/* PACOTES */
+.packages-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.package-card.featured {
+    border: 2px solid var(--secondary);
+}/* CARRINHO */
+.cart-sidebar {
+    position: fixed;
+    right: -350px;
+    top: 0;
+    width: 350px;
+    height: 100%;
+    background: #111;
+    transition: 0.3s;
+    z-index: 999;
+    padding: 20px;
+    box-shadow: -5px 0 20px rgba(0,0,0,0.5);
+    border-left: 1px solid #222;
+}
+
+.cart-sidebar.active {
+    right: 0;
+}
+
+/* ITENS */
+.cart-item {
+    border-bottom: 1px solid #333;
+    padding: 10px 0;
+}
+
+/* BOTÃO FINALIZAR */
+.checkout-btn {
+    width: 100%;
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+/* MODAL */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+}
+
+.modal-content {
+    backdrop-filter: blur(10px);
+    background: rgba(17,17,17,0.9);
+    margin: 5% auto;
+    padding: 20px;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 10px;
+}
+
+/* FORM */
+input, select, textarea {
+    width: 100%;
+    padding: 10px;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    color: white;
+    margin-top: 5px;
+    border-radius: 5px;
+}/* NOTIFICAÇÃO */
+.cart-notification {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    background: #00ff9d;
+    color: black;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 15px #00ff9d;
+    z-index: 9999;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+}
+
+/* SCROLL BONITO */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 10px;
+}
+
+/* FOOTER */
+footer {
+    text-align: center;
+    padding: 20px;
+    background: #111;
+    margin-top: 40px;
+}
