@@ -1,9 +1,12 @@
-// Shopping Cart System
+// =======================
+// CARRINHO
+// =======================
 let cart = [];
 
 // INIT
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', () => {
     const dateInput = document.getElementById('checkoutDate');
+
     if (dateInput) {
         const today = new Date().toISOString().split('T')[0];
         dateInput.setAttribute('min', today);
@@ -14,16 +17,19 @@ document.addEventListener('DOMContentLoaded', function () {
         cart = JSON.parse(savedCart);
         updateCartUI();
     }
+
+    setupForm();
 });
 
+// =======================
 // ADD ITEM
+// =======================
 function addToCart(name, price, duration) {
     const item = {
         id: Date.now(),
         name,
         price,
-        duration,
-        type: 'service'
+        duration
     };
 
     cart.push(item);
@@ -44,7 +50,9 @@ function saveCart() {
     localStorage.setItem('toqueDeluzCart', JSON.stringify(cart));
 }
 
-// UI
+// =======================
+// UI DO CARRINHO
+// =======================
 function updateCartUI() {
     const cartCount = document.getElementById('cartCount');
     const cartItems = document.getElementById('cartItems');
@@ -62,13 +70,14 @@ function updateCartUI() {
         cartItems.innerHTML = cart.map(item => `
             <div class="cart-item">
                 <div>
-                    <h4>${item.name}</h4>
+                    <strong>${item.name}</strong>
                     <p>${item.duration}</p>
                 </div>
                 <span>R$ ${item.price.toFixed(2)}</span>
                 <button onclick="removeFromCart(${item.id})">×</button>
             </div>
         `).join('');
+
         if (checkoutBtn) checkoutBtn.disabled = false;
     }
 
@@ -76,9 +85,11 @@ function updateCartUI() {
     cartTotal.textContent = `R$ ${total.toFixed(2)}`;
 }
 
+// =======================
 // ABRIR CARRINHO
-function toggleCart(event) {
-    if (event) event.preventDefault();
+// =======================
+function toggleCart(e) {
+    if (e) e.preventDefault();
 
     const sidebar = document.getElementById('cartSidebar');
     if (!sidebar) return;
@@ -86,29 +97,25 @@ function toggleCart(event) {
     sidebar.classList.toggle('active');
 }
 
-// NOTIFICAÇÃO VERDE
-function showCartNotification(itemName) {
+// =======================
+// NOTIFICAÇÃO BONITA (CSS)
+// =======================
+function showCartNotification(text) {
     const notification = document.createElement('div');
 
-    notification.style.position = 'fixed';
-    notification.style.top = '80px';
-    notification.style.right = '20px';
-    notification.style.background = '#22c55e';
-    notification.style.color = 'white';
-    notification.style.padding = '12px 18px';
-    notification.style.borderRadius = '8px';
-    notification.style.boxShadow = '0 4px 10px rgba(0,0,0,0.2)';
-    notification.style.zIndex = '9999';
-    notification.style.fontWeight = 'bold';
-
-    notification.innerText = `✓ ${itemName} adicionado ao carrinho`;
+    notification.className = 'cart-notification';
+    notification.innerText = `✓ ${text}`;
 
     document.body.appendChild(notification);
 
     setTimeout(() => {
         notification.remove();
     }, 2000);
-}// CHECKOUT MODAL
+}
+
+// =======================
+// MODAL CHECKOUT
+// =======================
 function openCheckoutModal() {
     if (cart.length === 0) return;
 
@@ -117,7 +124,7 @@ function openCheckoutModal() {
     const checkoutTotal = document.getElementById('checkoutTotal');
 
     checkoutItems.innerHTML = cart.map(item => `
-        <div>
+        <div class="checkout-item">
             <span>${item.name}</span>
             <span>${item.duration}</span>
             <span>R$ ${item.price.toFixed(2)}</span>
@@ -127,62 +134,45 @@ function openCheckoutModal() {
     const total = cart.reduce((sum, item) => sum + item.price, 0);
     checkoutTotal.textContent = `R$ ${total.toFixed(2)}`;
 
-    modal.style.display = 'block';
+    modal.style.display = 'flex'; // 🔥 IMPORTANTE
 }
 
-// FECHAR
 function closeCheckoutModal() {
     document.getElementById('checkoutModal').style.display = 'none';
 }
 
-// ENVIO PRO BACKEND
-document.addEventListener('DOMContentLoaded', function () {
+// =======================
+// FORM / BACKEND
+// =======================
+function setupForm() {
     const form = document.getElementById('checkoutForm');
-
     if (!form) return;
 
-    form.addEventListener('submit', async function (e) {
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const name = document.getElementById('checkoutName').value;
-        const email = document.getElementById('checkoutEmail').value;
-        const phone = document.getElementById('checkoutPhone').value;
-        const date = document.getElementById('checkoutDate').value;
-        const time = document.getElementById('checkoutTime').value;
-        const notes = document.getElementById('checkoutNotes').value;
-
-        const itens = cart.map(item => ({
-            nome: item.name,
-            duracao: item.duration,
-            preco: item.price
-        }));
-
-        const total = cart.reduce((sum, item) => sum + item.price, 0);
-
         const pedido = {
-            nome: name,
-            email,
-            telefone: phone,
-            data: date,
-            hora: time,
-            itens,
-            total,
-            observacoes: notes
+            nome: document.getElementById('checkoutName').value,
+            email: document.getElementById('checkoutEmail').value,
+            telefone: document.getElementById('checkoutPhone').value,
+            data: document.getElementById('checkoutDate').value,
+            hora: document.getElementById('checkoutTime').value,
+            observacoes: document.getElementById('checkoutNotes').value,
+            itens: cart,
+            total: cart.reduce((sum, i) => sum + i.price, 0)
         };
-
-        console.log("📤 Enviando:", pedido);
 
         try {
             const res = await fetch('http://localhost:3000/api/pedidos', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(pedido)
             });
 
             const data = await res.json();
 
             if (data.ok) {
-                showCartNotification("Pedido enviado com sucesso 🚀");
+                showCartNotification('Pedido enviado 🚀');
 
                 cart = [];
                 saveCart();
@@ -190,12 +180,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 form.reset();
                 closeCheckoutModal();
             } else {
-                alert("Erro ao enviar pedido");
+                alert('Erro ao enviar pedido');
             }
 
         } catch (err) {
-            alert("Erro de conexão ❌");
+            alert('Erro de conexão ❌');
             console.error(err);
         }
     });
-});
+}
