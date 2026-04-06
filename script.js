@@ -189,3 +189,47 @@ function setupForm() {
         }
     });
 }
+/* =========================
+   CARROSSEL INFINITO
+========================= */
+
+.image-carousel {
+    width: 100%;
+    overflow: hidden;
+    background: #000;
+    padding: 20px 0;
+}
+
+.carousel-track {
+    display: flex;
+    width: fit-content;
+    animation: scroll 25s linear infinite;
+}
+
+.carousel-images {
+    display: flex;
+}
+
+.carousel-images img {
+    width: 250px;
+    height: 150px;
+    object-fit: cover;
+    margin-right: 15px;
+    border-radius: 10px;
+    transition: 0.3s;
+}
+
+.carousel-images img:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px var(--primary);
+}
+
+/* ANIMAÇÃO */
+@keyframes scroll {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
