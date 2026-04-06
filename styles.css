@@ -263,3 +263,37 @@ footer {
     from { transform: translateX(100%); }
     to { transform: translateX(0); }
 }
+.image-carousel {
+    overflow: hidden;
+    width: 100%;
+    background: #000;
+    padding: 20px 0;
+}
+
+.carousel-track {
+    display: flex;
+    width: max-content;
+    animation: scroll 20s linear infinite;
+}
+
+.carousel-images {
+    display: flex;
+}
+
+.carousel-images img {
+    width: 250px;
+    height: 150px;
+    object-fit: cover;
+    margin: 0 10px;
+    border-radius: 10px;
+}
+
+/* Animação infinita */
+@keyframes scroll {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
