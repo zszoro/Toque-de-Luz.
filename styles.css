@@ -66,14 +66,9 @@ body {
 .hero h2 {
     font-size: 40px;
     color: var(--primary);
-    animation: glow 2s infinite alternate;
 }
 
-/* ANIMAÇÃO GLOW */
-@keyframes glow {
-    from { text-shadow: 0 0 10px var(--primary); }
-    to { text-shadow: 0 0 25px var(--primary), 0 0 50px var(--primary); }
-}/* BOTÕES NEON */
+/* BOTÕES NEON */
 .add-to-cart-btn,
 .package-button,
 .checkout-btn,
@@ -84,7 +79,7 @@ body {
     color: var(--primary);
     padding: 10px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: 0.3s;
     border-radius: 6px;
 }
 
@@ -95,10 +90,8 @@ body {
 .cta-button:hover {
     background: var(--primary);
     color: black;
-    box-shadow: 0 0 5px var(--primary),
-                0 0 15px var(--primary),
-                0 0 30px var(--primary),
-                0 0 60px var(--primary);
+    box-shadow: 0 0 10px var(--primary),
+                0 0 20px var(--primary);
 }
 
 /* SERVIÇOS */
@@ -112,20 +105,17 @@ body {
     gap: 20px;
 }
 
-/* CARDS */
-.service-card,
-.package-card {
-    backdrop-filter: blur(10px);
-    background: rgba(26, 26, 26, 0.7);
+/* CARD */
+.service-card {
+    background: var(--card);
     padding: 20px;
     border-radius: 10px;
     border: 1px solid #222;
-    transition: all 0.3s ease;
+    transition: 0.3s;
 }
 
-.service-card:hover,
-.package-card:hover {
-    transform: translateY(-8px) scale(1.02);
+.service-card:hover {
+    transform: translateY(-5px);
     border-color: var(--primary);
 }
 
@@ -147,9 +137,18 @@ body {
     gap: 20px;
 }
 
+.package-card {
+    background: var(--card);
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #222;
+}
+
 .package-card.featured {
     border: 2px solid var(--secondary);
-}/* CARRINHO */
+}
+
+/* CARRINHO */
 .cart-sidebar {
     position: fixed;
     right: -350px;
@@ -160,25 +159,41 @@ body {
     transition: 0.3s;
     z-index: 999;
     padding: 20px;
-    box-shadow: -5px 0 20px rgba(0,0,0,0.5);
-    border-left: 1px solid #222;
+    display: flex;
+    flex-direction: column;
 }
 
 .cart-sidebar.active {
     right: 0;
 }
 
-/* ITENS */
+.cart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.cart-items {
+    flex: 1;
+    overflow-y: auto;
+    margin: 15px 0;
+}
+
+.cart-footer {
+    border-top: 1px solid #333;
+    padding-top: 10px;
+}
+
+.cart-total {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+/* ITEM */
 .cart-item {
     border-bottom: 1px solid #333;
     padding: 10px 0;
-}
-
-/* BOTÃO FINALIZAR */
-.checkout-btn {
-    width: 100%;
-    margin-top: 10px;
-    font-weight: bold;
 }
 
 /* MODAL */
@@ -189,12 +204,13 @@ body {
     width: 100%;
     height: 100%;
     background: rgba(0,0,0,0.8);
+
+    justify-content: center;
+    align-items: center;
 }
 
 .modal-content {
-    backdrop-filter: blur(10px);
-    background: rgba(17,17,17,0.9);
-    margin: 5% auto;
+    background: #111;
     padding: 20px;
     width: 90%;
     max-width: 500px;
@@ -202,6 +218,15 @@ body {
 }
 
 /* FORM */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-row {
+    display: flex;
+    gap: 10px;
+}
+
 input, select, textarea {
     width: 100%;
     padding: 10px;
@@ -210,7 +235,17 @@ input, select, textarea {
     color: white;
     margin-top: 5px;
     border-radius: 5px;
-}/* NOTIFICAÇÃO */
+}
+
+/* FOOTER */
+footer {
+    text-align: center;
+    padding: 20px;
+    background: #111;
+    margin-top: 40px;
+}
+
+/* NOTIFICAÇÃO DO SITE */
 .cart-notification {
     position: fixed;
     top: 80px;
@@ -227,22 +262,4 @@ input, select, textarea {
 @keyframes slideIn {
     from { transform: translateX(100%); }
     to { transform: translateX(0); }
-}
-
-/* SCROLL BONITO */
-::-webkit-scrollbar {
-    width: 6px;
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--primary);
-    border-radius: 10px;
-}
-
-/* FOOTER */
-footer {
-    text-align: center;
-    padding: 20px;
-    background: #111;
-    margin-top: 40px;
 }
