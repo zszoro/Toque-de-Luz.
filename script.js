@@ -41,9 +41,7 @@ function updateCart() {
     cartTotal.innerText = `R$ ${total.toFixed(2)}`;
     cartCount.innerText = cart.length;
 
-    // 🔥 CORREÇÃO BOTÃO FINALIZAR
     checkoutBtn.disabled = false;
-    checkoutBtn.onclick = openCheckoutModal;
 }
 
 // ========================
@@ -64,12 +62,11 @@ function removeFromCart(index) {
 }
 
 // ========================
-// ABRIR/FECHAR CARRINHO
+// CARRINHO
 // ========================
 function toggleCart(event) {
     event.preventDefault();
-    const cartSidebar = document.getElementById("cartSidebar");
-    cartSidebar.classList.toggle("active");
+    document.getElementById("cartSidebar").classList.toggle("active");
 }
 
 // ========================
@@ -126,10 +123,13 @@ function addPackageToCart(type) {
 }
 
 // ========================
-// CHECKOUT
+// CHECKOUT (MODAL)
 // ========================
 function openCheckoutModal() {
     const modal = document.getElementById("checkoutModal");
+    modal.style.display = "flex";
+    document.body.classList.add("modal-open");
+
     const checkoutItems = document.getElementById("checkoutItems");
     const checkoutTotal = document.getElementById("checkoutTotal");
 
@@ -146,24 +146,35 @@ function openCheckoutModal() {
     });
 
     checkoutTotal.innerText = `R$ ${total.toFixed(2)}`;
-    modal.style.display = "flex";
 }
 
 function closeCheckoutModal() {
     document.getElementById("checkoutModal").style.display = "none";
+    document.body.classList.remove("modal-open");
 }
 
 // ========================
 // CONFIRMAÇÃO
 // ========================
-document.getElementById("checkoutForm").addEventListener("submit", function(e) {
-    e.preventDefault();
+document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("checkoutForm");
 
-    document.getElementById("checkoutModal").style.display = "none";
-    document.getElementById("confirmationModal").style.display = "flex";
+    if (form) {
+        form.addEventListener("submit", function(e) {
+            e.preventDefault();
 
-    cart = [];
-    updateCart();
+            closeCheckoutModal();
+            document.getElementById("confirmationModal").style.display = "flex";
+
+            cart = [];
+            updateCart();
+        });
+    }
+
+    const btn = document.getElementById("checkoutBtn");
+    if (btn) {
+        btn.onclick = openCheckoutModal;
+    }
 });
 
 function closeConfirmationModal() {
