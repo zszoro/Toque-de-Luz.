@@ -154,20 +154,39 @@ function closeCheckoutModal() {
 }
 
 // ========================
-// CONFIRMAÇÃO
+// CONFIRMAÇÃO (AGORA COM PAGAMENTO)
 // ========================
 document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("checkoutForm");
 
     if (form) {
-        form.addEventListener("submit", function(e) {
+        form.addEventListener("submit", async function(e) {
             e.preventDefault();
 
-            closeCheckoutModal();
-            document.getElementById("confirmationModal").style.display = "flex";
+            if (cart.length === 0) return;
 
-            cart = [];
-            updateCart();
+            try {
+                const response = await fetch("/api/create-payment", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ items: cart })
+                });
+
+                const data = await response.json();
+
+                if (data.init_point) {
+                    // 🔥 Redireciona pro Mercado Pago
+                    window.location.href = data.init_point;
+                } else {
+                    alert("Erro ao iniciar pagamento");
+                }
+
+            } catch (error) {
+                console.error(error);
+                alert("Erro no pagamento");
+            }
         });
     }
 
