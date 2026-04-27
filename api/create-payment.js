@@ -1,6 +1,8 @@
+import { saveOrder } from "../lib/db.js";
+
 export default async function handler(req, res) {
     if (req.method !== "POST") {
-        return res.status(405).json({ error: "Método não permitido" });
+        return res.status(405).end();
     }
 
     try {
@@ -23,12 +25,20 @@ export default async function handler(req, res) {
 
         const data = await response.json();
 
+        // salva pedido
+        saveOrder({
+            id: Date.now().toString(),
+            items,
+            paymentId: null,
+            status: "pending"
+        });
+
         return res.status(200).json({
             init_point: data.init_point
         });
 
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ error: "Erro ao criar pagamento" });
+        return res.status(500).end();
     }
 }
