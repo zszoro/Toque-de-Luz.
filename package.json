@@ -1,0 +1,13 @@
+{
+  "name": "toque-de-luz",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "tunnel": "node webhook-tunnel.mjs"
+  },
+  "dependencies": {
+    "localtunnel": "^2.0.2"
+  }
+}

@@ -1,1 +1,176 @@
-[]
+[
+  {
+    "id": "1777252993626-611",
+    "items": [
+      {
+        "name": "Teste",
+        "price": 10,
+        "duration": "30min"
+      }
+    ],
+    "paymentId": null,
+    "preferenceId": "236122667-a3f1398f-f5c4-4650-b96b-7c92728bac2a",
+    "status": "pending",
+    "createdAt": "2026-04-27T01:23:14.466Z"
+  },
+  {
+    "id": "1777253054101-1758",
+    "items": [
+      {
+        "name": "Massagem Relaxante",
+        "price": 80,
+        "duration": "80min"
+      }
+    ],
+    "paymentId": null,
+    "preferenceId": "236122667-45130526-7940-45ea-9353-4992a5d63134",
+    "status": "pending",
+    "createdAt": "2026-04-27T01:24:14.831Z"
+  },
+  {
+    "id": "1777253209865-9346",
+    "items": [
+      {
+        "name": "Teste",
+        "price": 10,
+        "duration": "30min"
+      }
+    ],
+    "paymentId": null,
+    "preferenceId": "236122667-1c4dee06-00ac-493d-b524-898ede555eb3",
+    "status": "pending",
+    "createdAt": "2026-04-27T01:26:50.629Z"
+  },
+  {
+    "id": "1777253763282-771",
+    "items": [
+      {
+        "name": "Teste",
+        "price": 10,
+        "duration": "30min"
+      }
+    ],
+    "paymentId": null,
+    "preferenceId": "236122667-b710e472-9585-4f5d-a384-070232b59653",
+    "status": "pending",
+    "createdAt": "2026-04-27T01:36:04.021Z"
+  },
+  {
+    "id": "1777253955473-7987",
+    "items": [
+      {
+        "name": "Massagem com Equilíbrio de Chakras",
+        "price": 100,
+        "duration": "60min"
+      }
+    ],
+    "paymentId": null,
+    "preferenceId": "236122667-9300dc1f-88f0-4459-82c9-d68628ec83f2",
+    "status": "pending",
+    "createdAt": "2026-04-27T01:39:16.177Z"
+  },
+  {
+    "id": "1777254914447-8541",
+    "items": [
+      {
+        "name": "Massagem Relaxante",
+        "price": 80,
+        "duration": "80min"
+      }
+    ],
+    "paymentId": null,
+    "preferenceId": "236122667-6af24e73-848d-4b6b-974f-c2515bcdfad9",
+    "status": "pending",
+    "createdAt": "2026-04-27T01:55:15.108Z"
+  },
+  {
+    "id": "1777254916390-4450",
+    "items": [
+      {
+        "name": "Massagem Relaxante",
+        "price": 80,
+        "duration": "80min"
+      }
+    ],
+    "paymentId": "1327018126",
+    "preferenceId": "236122667-49829f27-8d70-44ec-b5b5-67b9f189bc2f",
+    "status": "approved",
+    "createdAt": "2026-04-27T01:55:16.637Z",
+    "updatedAt": "2026-04-27T02:27:54.934Z"
+  },
+  {
+    "id": "1777256862328-8763",
+    "items": [
+      {
+        "name": "Teste Conta Vinculada",
+        "price": 45,
+        "duration": "30min"
+      }
+    ],
+    "booking": {
+      "name": "Conta Cliente",
+      "email": "conta1777256754969@example.com",
+      "phone": "12999999999",
+      "date": "2026-04-28",
+      "time": "10:30",
+      "notes": "teste conta"
+    },
+    "userId": "usr_1777256755114_9560",
+    "userEmail": "conta1777256754969@example.com",
+    "paymentId": null,
+    "preferenceId": "236122667-47837df1-9b97-4155-8db0-f1d43b9a97f5",
+    "status": "pending",
+    "mode": "TEST",
+    "createdAt": "2026-04-27T02:27:43.094Z"
+  },
+  {
+    "id": "1777257028170-7129",
+    "items": [
+      {
+        "name": "Teste Webhook Auto",
+        "price": 60,
+        "duration": "30min"
+      }
+    ],
+    "booking": {
+      "name": "Conta Cliente",
+      "email": "conta1777256754969@example.com",
+      "phone": "12999999999",
+      "date": "2026-04-28",
+      "time": "12:00",
+      "notes": "teste webhook"
+    },
+    "userId": "usr_1777256755114_9560",
+    "userEmail": "conta1777256754969@example.com",
+    "paymentId": null,
+    "preferenceId": "236122667-0686bc7c-1ee5-4554-86a4-56306b5f31ff",
+    "status": "pending",
+    "mode": "TEST",
+    "createdAt": "2026-04-27T02:30:28.909Z"
+  },
+  {
+    "id": "1777257415162-2082",
+    "items": [
+      {
+        "name": "Massagem com Óleos Terapêuticos",
+        "price": 100,
+        "duration": "60min"
+      }
+    ],
+    "booking": {
+      "name": "frederico",
+      "email": "zszoror@gmail.com",
+      "phone": "12",
+      "date": "2026-04-15",
+      "time": "09:00",
+      "notes": ""
+    },
+    "userId": "usr_1777257393399_7680",
+    "userEmail": "zszoror@gmail.com",
+    "paymentId": null,
+    "preferenceId": "236122667-35297209-3736-44c3-8804-af14b941e4a6",
+    "status": "pending",
+    "mode": "TEST",
+    "createdAt": "2026-04-27T02:37:03.019Z"
+  }
+]

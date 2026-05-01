@@ -1,0 +1,23 @@
+[
+  {
+    "id": "usr_1777256609277_2745",
+    "name": "Teste Usuario",
+    "email": "teste1777256609151@example.com",
+    "passwordHash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+    "createdAt": "2026-04-27T02:23:29.277Z"
+  },
+  {
+    "id": "usr_1777256755114_9560",
+    "name": "Conta Cliente",
+    "email": "conta1777256754969@example.com",
+    "passwordHash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+    "createdAt": "2026-04-27T02:25:55.114Z"
+  },
+  {
+    "id": "usr_1777257393399_7680",
+    "name": "frederico",
+    "email": "zszoror@gmail.com",
+    "passwordHash": "3f74ac7a2439d2d4422a07b942d5b19e5fc89f45303190f5cb31fba1d468ed82",
+    "createdAt": "2026-04-27T02:36:33.399Z"
+  }
+]

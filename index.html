@@ -18,6 +18,11 @@
                     <li><a href="#services">Serviços</a></li>
                     <li><a href="#contact">Contato</a></li>
                     <li>
+                        <a href="#" id="accountButton" class="account-button" onclick="openAccountModal(event)">
+                            <span id="accountButtonLabel">Minha Conta</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="#" id="cartButton" class="cart-button" onclick="toggleCart(event)">
                             🛒 Carrinho <span id="cartCount" class="cart-count">0</span>
                         </a>
@@ -30,7 +35,7 @@
     <section id="home" class="hero">
         <div class="hero-content">
             <h2>Relaxe e Renove</h2>
-            <p>Experimente a teperapia do reiki</p>
+            <p>Experimente a terapia do reiki</p>
             <a href="#services" class="cta-button">Ver Serviços</a>
         </div>
     </section>
@@ -321,6 +326,69 @@
             </div>
 
             <button class="modal-confirm-button" onclick="confirmCustomPackage()">Confirmar Pacote Personalizado</button>
+        </div>
+    </div>
+
+    <!-- Account Modal -->
+    <div id="accountModal" class="modal">
+        <div class="modal-content account-modal-content">
+            <span class="close" onclick="closeAccountModal()">&times;</span>
+            <h2>Minha Conta</h2>
+            <p class="modal-subtitle" id="accountSubtitle">Entre ou crie uma conta para acompanhar seus pedidos.</p>
+
+            <div id="accountAuthSection">
+                <div class="auth-tabs">
+                    <button id="loginTabBtn" class="auth-tab active" type="button" onclick="switchAccountTab('login')">Entrar</button>
+                    <button id="registerTabBtn" class="auth-tab" type="button" onclick="switchAccountTab('register')">Criar Conta</button>
+                </div>
+
+                <form id="loginForm" class="booking-form">
+                    <div class="form-group">
+                        <label for="loginEmail">E-mail</label>
+                        <input type="email" id="loginEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Senha</label>
+                        <input type="password" id="loginPassword" minlength="6" required>
+                    </div>
+                    <button type="submit" class="submit-button">Entrar</button>
+                </form>
+
+                <form id="registerForm" class="booking-form hidden-form">
+                    <div class="form-group">
+                        <label for="registerName">Nome</label>
+                        <input type="text" id="registerName" minlength="2" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerEmail">E-mail</label>
+                        <input type="email" id="registerEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerPassword">Senha</label>
+                        <input type="password" id="registerPassword" minlength="6" required>
+                    </div>
+                    <button type="submit" class="submit-button">Criar Conta</button>
+                </form>
+            </div>
+
+            <div id="accountLoggedSection" class="account-logged-section hidden-form">
+                <div class="account-summary">
+                    <h3 id="accountNameDisplay"></h3>
+                    <p id="accountEmailDisplay"></p>
+                </div>
+
+                <div class="account-actions">
+                    <button type="button" class="package-button" onclick="loadMyOrders()">Atualizar Pedidos</button>
+                    <button type="button" class="package-button custom-button" onclick="logoutAccount()">Sair</button>
+                </div>
+
+                <h3 class="account-orders-title">Seus Pedidos</h3>
+                <div id="accountOrdersList" class="account-orders-list">
+                    <p class="empty-cart">Sem pedidos vinculados a esta conta.</p>
+                </div>
+            </div>
+
+            <p id="accountMessage" class="account-message"></p>
         </div>
     </div>
 

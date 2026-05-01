@@ -838,12 +838,177 @@ html {
     }
 }
 
+.hidden-form {
+    display: none !important;
+}
+
+body.modal-open {
+    overflow: hidden;
+}
+
+/* Account Modal */
+.account-modal-content {
+    max-width: 720px;
+}
+
+.auth-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+}
+
+.auth-tab {
+    border: 2px solid var(--secondary-color);
+    background-color: var(--white);
+    color: var(--text-dark);
+    border-radius: 8px;
+    padding: 0.8rem;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.auth-tab.active {
+    background-color: var(--primary-color);
+    color: var(--white);
+    border-color: var(--primary-color);
+}
+
+.account-logged-section {
+    margin-top: 1rem;
+}
+
+.account-summary {
+    background-color: var(--background);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.account-summary h3 {
+    margin: 0;
+    color: var(--primary-color);
+}
+
+.account-summary p {
+    margin: 0.3rem 0 0;
+    color: #666;
+}
+
+.account-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+}
+
+.account-orders-title {
+    color: var(--primary-color);
+    margin-bottom: 0.8rem;
+}
+
+.account-orders-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    max-height: 280px;
+    overflow-y: auto;
+    padding-right: 0.3rem;
+}
+
+.account-order-card {
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 1rem;
+    background-color: #fff;
+}
+
+.account-order-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.account-order-meta {
+    margin: 0.5rem 0;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.account-order-items {
+    margin: 0;
+    padding-left: 1.2rem;
+}
+
+.account-order-items li {
+    margin-bottom: 0.25rem;
+}
+
+.account-order-total {
+    margin-top: 0.6rem;
+    color: var(--primary-color);
+    font-weight: 700;
+}
+
+.order-status {
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    padding: 0.25rem 0.6rem;
+}
+
+.order-status.approved {
+    background-color: #eaf7ec;
+    color: #1e8a42;
+}
+
+.order-status.pending {
+    background-color: #fff8e6;
+    color: #986f00;
+}
+
+.order-status.rejected,
+.order-status.cancelled {
+    background-color: #fdecec;
+    color: #b2312f;
+}
+
+.account-message {
+    min-height: 1.4rem;
+    margin-top: 0.8rem;
+    font-size: 0.95rem;
+}
+
+.account-message.success {
+    color: #1e8a42;
+}
+
+.account-message.error {
+    color: #b2312f;
+}
+
+@media (max-width: 768px) {
+    .account-actions {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* Cart Button in Navigation */
+.account-button,
 .cart-button {
     position: relative;
     display: flex;
     align-items: center;
     gap: 0.5rem;
+}
+
+.account-button.logged-in {
+    color: var(--primary-color);
 }
 
 .cart-count {
@@ -922,6 +1087,7 @@ html {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 0.75rem;
 }
 
 .cart-item-info {
@@ -944,26 +1110,54 @@ html {
     font-weight: bold;
     color: var(--primary-color);
     font-size: 1.1rem;
-    margin-right: 1rem;
+    margin-right: 0;
+    white-space: nowrap;
 }
 
 .remove-item {
-    background-color: #e74c3c;
-    color: var(--white);
-    border: none;
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
+    background-color: #fff4f2;
+    color: #a22b20;
+    border: 1px solid #f1b7b0;
+    border-radius: 999px;
+    padding: 0.45rem 0.8rem;
+    min-width: 82px;
+    min-height: 36px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 1;
     cursor: pointer;
-    font-size: 1.2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.3s;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 .remove-item:hover {
-    background-color: #c0392b;
+    background-color: #fce5e1;
+    border-color: #e88f84;
+    color: #7b1f16;
+}
+
+.remove-item:active {
+    background-color: #f8d9d4;
+}
+
+.remove-item:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+    .cart-item {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .cart-item-price {
+        order: 3;
+    }
+
+    .remove-item {
+        margin-left: auto;
+    }
 }
 
 .cart-footer {
