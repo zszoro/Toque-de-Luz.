@@ -48,6 +48,6 @@ export default async function handler(req, res) {
         });
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ error: "Nao foi possivel criar a conta." });
+        return res.status(500).json({ error: error.message || "Nao foi possivel criar a conta." });
     }
 }

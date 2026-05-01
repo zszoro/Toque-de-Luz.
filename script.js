@@ -163,6 +163,10 @@ function loginLocalAccount(email, password) {
 }
 
 function shouldUseLocalAccountFallback(error, response) {
+    if (error?.message?.toLowerCase().includes("banco permanente")) {
+        return false;
+    }
+
     if (response && response.status !== 404 && response.status !== 405) {
         return false;
     }
