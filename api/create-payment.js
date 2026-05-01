@@ -6,12 +6,23 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { items } = req.body;
+        const { items, booking } = req.body;
+        const accessToken = process.env.MP_PROD_ACCESS_TOKEN || process.env.MP_TEST_ACCESS_TOKEN || process.env.ACCESS_TOKEN;
+
+        if (!accessToken) {
+            return res.status(500).json({
+                error: "Credencial do Mercado Pago ausente. Configure MP_PROD_ACCESS_TOKEN ou MP_TEST_ACCESS_TOKEN."
+            });
+        }
+
+        if (!Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ error: "Carrinho vazio ou itens invalidos." });
+        }
 
         const response = await fetch("https://api.mercadopago.com/checkout/preferences", {
             method: "POST",
             headers: {
-                Authorization: `Bearer ${process.env.ACCESS_TOKEN}`,
+                Authorization: `Bearer ${accessToken}`,
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
@@ -25,13 +36,26 @@ export default async function handler(req, res) {
 
         const data = await response.json();
 
+        if (!response.ok || !data.init_point) {
+            return res.status(502).json({
+                error: data.message || "Falha ao criar pagamento no Mercado Pago.",
+                details: data
+            });
+        }
+
         // salva pedido
-        saveOrder({
-            id: Date.now().toString(),
-            items,
-            paymentId: null,
-            status: "pending"
-        });
+        try {
+            saveOrder({
+                id: Date.now().toString(),
+                items,
+                booking: booking || {},
+                paymentId: null,
+                preferenceId: data.id || null,
+                status: "pending"
+            });
+        } catch (error) {
+            console.error("Nao foi possivel salvar o pedido", error);
+        }
 
         return res.status(200).json({
             init_point: data.init_point
@@ -39,6 +63,6 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error(error);
-        return res.status(500).end();
+        return res.status(500).json({ error: "Erro interno ao iniciar pagamento." });
     }
 }

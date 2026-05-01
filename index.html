@@ -12,16 +12,14 @@
             <div class="container">
                 <div class="logo">
                     <h1>✨ Toque de Luz</h1>
+                    <a href="#" id="accountButton" class="account-button" onclick="openAccountModal(event)">
+                        <span id="accountButtonLabel">Minha Conta</span>
+                    </a>
                 </div>
                 <ul class="nav-links">
                     <li><a href="#home">Início</a></li>
                     <li><a href="#services">Serviços</a></li>
                     <li><a href="#contact">Contato</a></li>
-                    <li>
-                        <a href="#" id="accountButton" class="account-button" onclick="openAccountModal(event)">
-                            <span id="accountButtonLabel">Minha Conta</span>
-                        </a>
-                    </li>
                     <li>
                         <a href="#" id="cartButton" class="cart-button" onclick="toggleCart(event)">
                             🛒 Carrinho <span id="cartCount" class="cart-count">0</span>
@@ -364,6 +362,10 @@
                         <input type="email" id="registerEmail" required>
                     </div>
                     <div class="form-group">
+                        <label for="registerPhone">Telefone</label>
+                        <input type="tel" id="registerPhone" required>
+                    </div>
+                    <div class="form-group">
                         <label for="registerPassword">Senha</label>
                         <input type="password" id="registerPassword" minlength="6" required>
                     </div>
@@ -375,6 +377,7 @@
                 <div class="account-summary">
                     <h3 id="accountNameDisplay"></h3>
                     <p id="accountEmailDisplay"></p>
+                    <p id="accountPhoneDisplay"></p>
                 </div>
 
                 <div class="account-actions">
@@ -406,7 +409,20 @@
                 <span>Total:</span>
                 <span id="cartTotal">R$ 0,00</span>
             </div>
-            <button class="checkout-btn" onclick="openCheckoutModal()" disabled id="checkoutBtn">Finalizar Compra</button>
+            <button class="checkout-btn" onclick="handleCheckoutStart()" disabled id="checkoutBtn">Finalizar Compra</button>
+        </div>
+    </div>
+
+    <!-- Account Prompt Modal -->
+    <div id="checkoutAccountPrompt" class="modal">
+        <div class="modal-content account-prompt-content">
+            <span class="close" onclick="closeCheckoutAccountPrompt()">&times;</span>
+            <h2>Quer salvar seu carrinho?</h2>
+            <p class="modal-subtitle">Crie uma conta para manter seus itens salvos e usar seus dados no agendamento.</p>
+            <div class="account-prompt-actions">
+                <button type="button" class="submit-button" onclick="goToCreateAccountFromCheckout()">Criar Conta</button>
+                <button type="button" class="package-button custom-button" onclick="continueCheckoutWithoutAccount()">Continuar sem conta</button>
+            </div>
         </div>
     </div>
 

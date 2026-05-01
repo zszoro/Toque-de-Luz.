@@ -50,6 +50,12 @@ body {
     font-size: 1.8rem;
 }
 
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
 .nav-links {
     display: flex;
     list-style: none;
@@ -992,9 +998,32 @@ body.modal-open {
     color: #b2312f;
 }
 
+.account-prompt-content {
+    max-width: 430px;
+}
+
+.account-prompt-actions {
+    display: grid;
+    gap: 0.8rem;
+}
+
+.account-prompt-actions .package-button {
+    margin-top: 0;
+}
+
 @media (max-width: 768px) {
     .account-actions {
         grid-template-columns: 1fr;
+    }
+
+    .navbar .container,
+    .logo {
+        align-items: flex-start;
+    }
+
+    .logo {
+        flex-direction: column;
+        gap: 0.5rem;
     }
 }
 
@@ -1005,6 +1034,14 @@ body.modal-open {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+}
+
+.logo .account-button {
+    border: 1px solid var(--secondary-color);
+    border-radius: 999px;
+    padding: 0.45rem 0.8rem;
+    font-size: 0.9rem;
+    white-space: nowrap;
 }
 
 .account-button.logged-in {
@@ -1251,6 +1288,17 @@ body.modal-open {
     margin-top: 1rem;
     padding-top: 1rem;
     border-top: 2px solid var(--primary-color);
+}
+
+.cart-notification {
+    background-color: #1f9d55;
+    color: var(--white);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    font-weight: 700;
+    max-width: min(360px, calc(100vw - 40px));
+    padding: 0.9rem 1rem;
+    animation: slideInRight 0.25s ease;
 }
 
 /* Responsive Cart */

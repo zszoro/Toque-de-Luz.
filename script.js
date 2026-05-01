@@ -4,6 +4,9 @@ const CUSTOM_PACKAGE_DISCOUNT = 0.15;
 const AUTH_TOKEN_KEY = "toque_de_luz_auth_token";
 const AUTH_USER_KEY = "toque_de_luz_auth_user";
 const LOCAL_USERS_KEY = "toque_de_luz_local_users";
+const CART_KEY_PREFIX = "toque_de_luz_cart_";
+const LOCAL_ORDERS_KEY_PREFIX = "toque_de_luz_orders_";
+const WHATSAPP_NUMBER = "5512997685503";
 
 let authToken = localStorage.getItem(AUTH_TOKEN_KEY) || "";
 let authUser = null;
@@ -52,6 +55,25 @@ function getEmailValidationMessage(email) {
     return "";
 }
 
+function normalizePhoneValue(phone) {
+    return String(phone || "").trim();
+}
+
+function getPhoneValidationMessage(phone) {
+    const normalizedPhone = normalizePhoneValue(phone);
+    const digits = normalizedPhone.replace(/\D/g, "");
+
+    if (!normalizedPhone) {
+        return "Informe um telefone.";
+    }
+
+    if (digits.length < 10 || digits.length > 11) {
+        return "Informe um telefone valido com DDD.";
+    }
+
+    return "";
+}
+
 function getLocalUsers() {
     try {
         const storedUsers = localStorage.getItem(LOCAL_USERS_KEY);
@@ -86,8 +108,9 @@ function createLocalToken() {
     return `local_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
 }
 
-function registerLocalAccount(name, email, password) {
+function registerLocalAccount(name, email, phone, password) {
     const normalizedEmail = normalizeEmailValue(email);
+    const normalizedPhone = normalizePhoneValue(phone);
     const users = getLocalUsers();
 
     if (users.some((user) => normalizeEmailValue(user.email) === normalizedEmail)) {
@@ -98,6 +121,7 @@ function registerLocalAccount(name, email, password) {
         id: `local_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
         name,
         email: normalizedEmail,
+        phone: normalizedPhone,
         passwordHash: getLocalPasswordHash(password),
         createdAt: new Date().toISOString()
     };
@@ -111,6 +135,7 @@ function registerLocalAccount(name, email, password) {
             id: user.id,
             name: user.name,
             email: user.email,
+            phone: user.phone,
             createdAt: user.createdAt
         }
     };
@@ -131,6 +156,7 @@ function loginLocalAccount(email, password) {
             id: user.id,
             name: user.name,
             email: user.email,
+            phone: user.phone || "",
             createdAt: user.createdAt
         }
     };
@@ -144,6 +170,107 @@ function shouldUseLocalAccountFallback(error, response) {
     return !response || response.status === 404 || response.status === 405 || error instanceof TypeError;
 }
 
+function getCartStorageKey(user = authUser) {
+    return `${CART_KEY_PREFIX}${user?.id || "guest"}`;
+}
+
+function sanitizeCartItems(items) {
+    if (!Array.isArray(items)) return [];
+
+    return items
+        .map((item) => ({
+            name: String(item?.name || "").trim(),
+            price: Number(item?.price || 0),
+            duration: String(item?.duration || "").trim()
+        }))
+        .filter((item) => item.name && Number.isFinite(item.price) && item.price > 0);
+}
+
+function loadCartFromStorage(user = authUser) {
+    try {
+        const storedCart = localStorage.getItem(getCartStorageKey(user));
+        return sanitizeCartItems(storedCart ? JSON.parse(storedCart) : []);
+    } catch {
+        return [];
+    }
+}
+
+function saveCartToStorage(user = authUser) {
+    localStorage.setItem(getCartStorageKey(user), JSON.stringify(sanitizeCartItems(cart)));
+}
+
+function mergeCartItems(primaryItems, secondaryItems) {
+    const merged = [];
+    const seen = new Set();
+
+    [...primaryItems, ...secondaryItems].forEach((item) => {
+        const key = `${item.name}|${item.price}|${item.duration}`;
+        if (seen.has(key)) return;
+
+        seen.add(key);
+        merged.push(item);
+    });
+
+    return merged;
+}
+
+function loadActiveCart() {
+    cart = loadCartFromStorage(authUser);
+    updateCart();
+}
+
+function getLocalOrdersKey() {
+    return `${LOCAL_ORDERS_KEY_PREFIX}${authUser?.id || "guest"}`;
+}
+
+function getLocalOrders() {
+    try {
+        const storedOrders = localStorage.getItem(getLocalOrdersKey());
+        const parsedOrders = storedOrders ? JSON.parse(storedOrders) : [];
+        return Array.isArray(parsedOrders) ? parsedOrders : [];
+    } catch {
+        return [];
+    }
+}
+
+function saveLocalPendingOrder(booking) {
+    const orders = getLocalOrders();
+    const order = {
+        id: `local_order_${Date.now()}`,
+        items: sanitizeCartItems(cart),
+        booking,
+        userId: authUser?.id || null,
+        userEmail: authUser?.email || booking.email || null,
+        status: "pending",
+        createdAt: new Date().toISOString()
+    };
+
+    orders.unshift(order);
+    localStorage.setItem(getLocalOrdersKey(), JSON.stringify(orders));
+    return order;
+}
+
+function buildWhatsAppCheckoutUrl(order) {
+    const itemLines = order.items
+        .map((item) => `- ${item.name} (${item.duration}) - ${formatCurrency(item.price)}`)
+        .join("\n");
+    const total = order.items.reduce((sum, item) => sum + item.price, 0);
+    const booking = order.booking;
+    const message = [
+        "Ola, quero finalizar este agendamento:",
+        itemLines,
+        `Total: ${formatCurrency(total)}`,
+        `Nome: ${booking.name}`,
+        `E-mail: ${booking.email}`,
+        `Telefone: ${booking.phone}`,
+        `Data: ${booking.date}`,
+        `Horario: ${booking.time}`,
+        booking.notes ? `Observacoes: ${booking.notes}` : ""
+    ].filter(Boolean).join("\n");
+
+    return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+}
+
 function setAccountMessage(message, isError = false) {
     const messageEl = document.getElementById("accountMessage");
     if (!messageEl) return;
@@ -153,11 +280,23 @@ function setAccountMessage(message, isError = false) {
     messageEl.classList.toggle("success", Boolean(message && !isError));
 }
 
-function saveAuthState(token, user) {
+function saveAuthState(token, user, options = {}) {
+    const previousUserId = authUser?.id || "";
+    const shouldSyncCart = options.syncCart !== false;
+    const currentCart = sanitizeCartItems(cart);
+
     authToken = token;
     authUser = user;
     localStorage.setItem(AUTH_TOKEN_KEY, token);
     localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+
+    if (shouldSyncCart && previousUserId !== user?.id) {
+        const savedAccountCart = loadCartFromStorage(user);
+        cart = currentCart.length ? mergeCartItems(savedAccountCart, currentCart) : savedAccountCart;
+        saveCartToStorage(user);
+        updateCart();
+    }
+
     updateAccountButtonLabel();
 }
 
@@ -203,7 +342,7 @@ function closeCartSidebar() {
     }
 }
 
-function openAccountModal(event) {
+function openAccountModal(event, preferredTab = "login") {
     if (event) event.preventDefault();
 
     const modal = document.getElementById("accountModal");
@@ -218,7 +357,7 @@ function openAccountModal(event) {
         loadMyOrders();
     } else {
         showAuthSection();
-        switchAccountTab("login");
+        switchAccountTab(preferredTab);
     }
 }
 
@@ -269,9 +408,11 @@ function showLoggedAccountSection() {
 
     const nameDisplay = document.getElementById("accountNameDisplay");
     const emailDisplay = document.getElementById("accountEmailDisplay");
+    const phoneDisplay = document.getElementById("accountPhoneDisplay");
 
     if (nameDisplay) nameDisplay.textContent = authUser?.name || "";
     if (emailDisplay) emailDisplay.textContent = authUser?.email || "";
+    if (phoneDisplay) phoneDisplay.textContent = authUser?.phone || "";
 }
 
 function renderAccountOrders(orders) {
@@ -315,7 +456,7 @@ async function loadMyOrders() {
     }
 
     if (isLocalAuthSession()) {
-        renderAccountOrders([]);
+        renderAccountOrders(getLocalOrders());
         return;
     }
 
@@ -394,11 +535,18 @@ async function registerAccount(event) {
 
     const name = document.getElementById("registerName")?.value?.trim();
     const email = normalizeEmailValue(document.getElementById("registerEmail")?.value);
+    const phone = normalizePhoneValue(document.getElementById("registerPhone")?.value);
     const password = document.getElementById("registerPassword")?.value || "";
     const emailError = getEmailValidationMessage(email);
+    const phoneError = getPhoneValidationMessage(phone);
 
     if (emailError) {
         setAccountMessage(emailError, true);
+        return;
+    }
+
+    if (phoneError) {
+        setAccountMessage(phoneError, true);
         return;
     }
 
@@ -409,7 +557,7 @@ async function registerAccount(event) {
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ name, email, password })
+            body: JSON.stringify({ name, email, phone, password })
         });
 
         const data = await response.json().catch(() => ({}));
@@ -425,7 +573,7 @@ async function registerAccount(event) {
     } catch (error) {
         if (shouldUseLocalAccountFallback(error, response)) {
             try {
-                const localData = registerLocalAccount(name, email, password);
+                const localData = registerLocalAccount(name, email, phone, password);
                 saveAuthState(localData.token, localData.user);
                 showLoggedAccountSection();
                 setAccountMessage("Conta criada e salva neste navegador.");
@@ -456,6 +604,7 @@ async function logoutAccount() {
     }
 
     clearAuthState();
+    loadActiveCart();
     showAuthSection();
     switchAccountTab("login");
     renderAccountOrders([]);
@@ -478,12 +627,14 @@ async function refreshAuthState() {
 
         if (!response.ok || !data.user) {
             clearAuthState();
+            loadActiveCart();
             return;
         }
 
-        saveAuthState(authToken, data.user);
+        saveAuthState(authToken, data.user, { syncCart: false });
     } catch {
         clearAuthState();
+        loadActiveCart();
     }
 }
 
@@ -495,6 +646,7 @@ function updateCart() {
     const cartTotal = document.getElementById("cartTotal");
     const cartCount = document.getElementById("cartCount");
     const checkoutBtn = document.getElementById("checkoutBtn");
+    saveCartToStorage();
 
     cartItems.innerHTML = "";
 
@@ -745,6 +897,7 @@ function prefillCheckoutFromAccount() {
 
     const nameInput = document.getElementById("checkoutName");
     const emailInput = document.getElementById("checkoutEmail");
+    const phoneInput = document.getElementById("checkoutPhone");
 
     if (nameInput && !nameInput.value.trim()) {
         nameInput.value = authUser.name || "";
@@ -753,9 +906,50 @@ function prefillCheckoutFromAccount() {
     if (emailInput && !emailInput.value.trim()) {
         emailInput.value = authUser.email || "";
     }
+
+    if (phoneInput && !phoneInput.value.trim()) {
+        phoneInput.value = authUser.phone || "";
+    }
 }
 
-function openCheckoutModal() {
+function closeCheckoutAccountPrompt() {
+    const modal = document.getElementById("checkoutAccountPrompt");
+    if (!modal) return;
+
+    modal.style.display = "none";
+    document.body.classList.remove("modal-open");
+}
+
+function goToCreateAccountFromCheckout() {
+    closeCheckoutAccountPrompt();
+    openAccountModal(null, "register");
+}
+
+function continueCheckoutWithoutAccount() {
+    closeCheckoutAccountPrompt();
+    openCheckoutModal(true);
+}
+
+function handleCheckoutStart() {
+    if (!authUser) {
+        closeCartSidebar();
+        const modal = document.getElementById("checkoutAccountPrompt");
+        if (modal) {
+            modal.style.display = "flex";
+            document.body.classList.add("modal-open");
+            return;
+        }
+    }
+
+    openCheckoutModal(true);
+}
+
+function openCheckoutModal(skipAccountPrompt = false) {
+    if (!skipAccountPrompt && !authUser) {
+        handleCheckoutStart();
+        return;
+    }
+
     closeCartSidebar();
     prefillCheckoutFromAccount();
 
@@ -815,6 +1009,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("checkoutForm");
     bindCustomPackageControls();
     bindAccountForms();
+    loadActiveCart();
     refreshAuthState();
 
     if (form) {
@@ -823,6 +1018,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (cart.length === 0) return;
 
+            const booking = {
+                name: document.getElementById("checkoutName")?.value?.trim() || "",
+                email: normalizeEmailValue(document.getElementById("checkoutEmail")?.value),
+                phone: normalizePhoneValue(document.getElementById("checkoutPhone")?.value),
+                date: document.getElementById("checkoutDate")?.value || "",
+                time: document.getElementById("checkoutTime")?.value || "",
+                notes: document.getElementById("checkoutNotes")?.value?.trim() || ""
+            };
+            const checkoutEmailError = getEmailValidationMessage(booking.email);
+            const checkoutPhoneError = getPhoneValidationMessage(booking.phone);
+
+            if (checkoutEmailError) {
+                alert(checkoutEmailError);
+                return;
+            }
+
+            if (checkoutPhoneError) {
+                alert(checkoutPhoneError);
+                return;
+            }
+
             const submitButton = form.querySelector("button[type='submit']");
             const originalButtonText = submitButton ? submitButton.textContent : "";
 
@@ -830,15 +1046,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 submitButton.disabled = true;
                 submitButton.textContent = "Processando...";
             }
-
-            const booking = {
-                name: document.getElementById("checkoutName")?.value?.trim() || "",
-                email: document.getElementById("checkoutEmail")?.value?.trim() || "",
-                phone: document.getElementById("checkoutPhone")?.value?.trim() || "",
-                date: document.getElementById("checkoutDate")?.value || "",
-                time: document.getElementById("checkoutTime")?.value || "",
-                notes: document.getElementById("checkoutNotes")?.value?.trim() || ""
-            };
 
             try {
                 const response = await fetch("/api/create-payment", {
@@ -866,7 +1073,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             } catch (error) {
                 console.error(error);
-                alert(error.message || "Erro no pagamento");
+                const localOrder = saveLocalPendingOrder(booking);
+                alert("O pagamento online nao abriu agora. Seu pedido foi salvo e vamos continuar pelo WhatsApp.");
+                window.location.href = buildWhatsAppCheckoutUrl(localOrder);
             } finally {
                 if (submitButton) {
                     submitButton.disabled = false;
@@ -878,6 +1087,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const checkoutBtn = document.getElementById("checkoutBtn");
     if (checkoutBtn) {
-        checkoutBtn.onclick = openCheckoutModal;
+        checkoutBtn.onclick = handleCheckoutStart;
     }
 });

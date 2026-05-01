@@ -157,6 +157,15 @@ function isValidEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
 }
 
+function normalizePhone(phone) {
+    return String(phone || "").trim();
+}
+
+function isValidPhone(phone) {
+    const digits = normalizePhone(phone).replace(/\D/g, "");
+    return digits.length >= 10 && digits.length <= 11;
+}
+
 function hashPassword(password) {
     return crypto.createHash("sha256").update(String(password || "")).digest("hex");
 }
@@ -166,6 +175,7 @@ function sanitizeUser(user) {
         id: user.id,
         name: user.name,
         email: user.email,
+        phone: user.phone || "",
         createdAt: user.createdAt
     };
 }
@@ -378,6 +388,7 @@ async function handleRegister(req, res) {
 
     const name = String(body.name || "").trim();
     const email = normalizeEmail(body.email);
+    const phone = normalizePhone(body.phone);
     const password = String(body.password || "");
 
     if (name.length < 2) {
@@ -387,6 +398,11 @@ async function handleRegister(req, res) {
 
     if (!isValidEmail(email)) {
         sendJson(res, 400, { error: "Informe um e-mail valido." });
+        return;
+    }
+
+    if (!isValidPhone(phone)) {
+        sendJson(res, 400, { error: "Informe um telefone valido com DDD." });
         return;
     }
 
@@ -406,6 +422,7 @@ async function handleRegister(req, res) {
         id: `usr_${Date.now()}_${Math.floor(Math.random() * 10_000)}`,
         name,
         email,
+        phone,
         passwordHash: hashPassword(password),
         createdAt: new Date().toISOString()
     };
@@ -538,6 +555,22 @@ async function handleCreatePayment(req, res) {
     const booking = normalizeBooking(body.booking);
     const accountToken = getAuthToken(req, body);
     const user = getUserByToken(accountToken);
+    if (user) {
+        if (!booking.name) booking.name = user.name || "";
+        if (!booking.email) booking.email = user.email || "";
+        if (!booking.phone) booking.phone = user.phone || "";
+    }
+
+    if (!isValidEmail(booking.email)) {
+        sendJson(res, 400, { error: "Informe um e-mail valido para finalizar." });
+        return;
+    }
+
+    if (!isValidPhone(booking.phone)) {
+        sendJson(res, 400, { error: "Informe um telefone valido com DDD para finalizar." });
+        return;
+    }
+
     const orderId = `${Date.now()}-${Math.floor(Math.random() * 10_000)}`;
 
     const webhookBaseUrl = resolveWebhookPublicUrl();
