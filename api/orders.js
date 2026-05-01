@@ -1,6 +1,6 @@
-import { getOrders } from "../lib/db.js";
+import { getOrders } from "../lib/store.js";
 
-export default function handler(req, res) {
-    const orders = getOrders();
+export default async function handler(req, res) {
+    const orders = await getOrders();
     res.status(200).json(orders);
 }

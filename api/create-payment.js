@@ -1,4 +1,17 @@
-import { saveOrder } from "../lib/db.js";
+import {
+    getUserByToken,
+    isValidEmail,
+    isValidPhone,
+    normalizeCartItems,
+    normalizeEmail,
+    normalizePhone,
+    saveOrder
+} from "../lib/store.js";
+import { getAuthToken } from "./_auth.js";
+
+function getMercadoPagoAccessToken() {
+    return process.env.MP_PROD_ACCESS_TOKEN || process.env.MP_TEST_ACCESS_TOKEN || process.env.ACCESS_TOKEN || "";
+}
 
 export default async function handler(req, res) {
     if (req.method !== "POST") {
@@ -6,8 +19,18 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { items, booking } = req.body;
-        const accessToken = process.env.MP_PROD_ACCESS_TOKEN || process.env.MP_TEST_ACCESS_TOKEN || process.env.ACCESS_TOKEN;
+        const { items, booking } = req.body || {};
+        const accessToken = getMercadoPagoAccessToken();
+        const normalizedItems = normalizeCartItems(items);
+        const user = await getUserByToken(getAuthToken(req));
+        const normalizedBooking = {
+            name: String(booking?.name || user?.name || "").trim(),
+            email: normalizeEmail(booking?.email || user?.email || ""),
+            phone: normalizePhone(booking?.phone || user?.phone || ""),
+            date: String(booking?.date || "").trim(),
+            time: String(booking?.time || "").trim(),
+            notes: String(booking?.notes || "").trim()
+        };
 
         if (!accessToken) {
             return res.status(500).json({
@@ -15,10 +38,19 @@ export default async function handler(req, res) {
             });
         }
 
-        if (!Array.isArray(items) || items.length === 0) {
+        if (normalizedItems.length === 0) {
             return res.status(400).json({ error: "Carrinho vazio ou itens invalidos." });
         }
 
+        if (!isValidEmail(normalizedBooking.email)) {
+            return res.status(400).json({ error: "Informe um e-mail valido para finalizar." });
+        }
+
+        if (!isValidPhone(normalizedBooking.phone)) {
+            return res.status(400).json({ error: "Informe um telefone valido com DDD para finalizar." });
+        }
+
+        const orderId = `${Date.now()}-${Math.floor(Math.random() * 10000)}`;
         const response = await fetch("https://api.mercadopago.com/checkout/preferences", {
             method: "POST",
             headers: {
@@ -26,7 +58,11 @@ export default async function handler(req, res) {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                items: items.map(item => ({
+                external_reference: orderId,
+                payer: {
+                    email: normalizedBooking.email
+                },
+                items: normalizedItems.map(item => ({
                     title: item.name,
                     quantity: 1,
                     unit_price: item.price
@@ -45,10 +81,12 @@ export default async function handler(req, res) {
 
         // salva pedido
         try {
-            saveOrder({
-                id: Date.now().toString(),
-                items,
-                booking: booking || {},
+            await saveOrder({
+                id: orderId,
+                items: normalizedItems,
+                booking: normalizedBooking,
+                userId: user?.id || null,
+                userEmail: user?.email || normalizedBooking.email || null,
                 paymentId: null,
                 preferenceId: data.id || null,
                 status: "pending"
