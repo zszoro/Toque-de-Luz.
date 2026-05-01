@@ -180,6 +180,30 @@ function sanitizeUser(user) {
     };
 }
 
+function normalizeCartItems(items) {
+    if (!Array.isArray(items)) return [];
+
+    return items
+        .map((item) => ({
+            name: String(item?.name || "").trim(),
+            price: Number(item?.price || 0),
+            duration: String(item?.duration || "").trim()
+        }))
+        .filter((item) => item.name && Number.isFinite(item.price) && item.price > 0);
+}
+
+function saveUserCart(userId, items) {
+    const users = readUsers();
+    const index = users.findIndex((user) => user.id === userId);
+
+    if (index === -1) return false;
+
+    users[index].cart = normalizeCartItems(items);
+    users[index].cartUpdatedAt = new Date().toISOString();
+    writeUsers(users);
+    return true;
+}
+
 function createSession(userId) {
     const sessions = readSessions();
     const token = crypto.randomBytes(24).toString("hex");
@@ -423,6 +447,8 @@ async function handleRegister(req, res) {
         name,
         email,
         phone,
+        cart: [],
+        cartUpdatedAt: null,
         passwordHash: hashPassword(password),
         createdAt: new Date().toISOString()
     };
@@ -522,6 +548,51 @@ function handleMyOrders(req, res) {
         .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
 
     sendJson(res, 200, { orders });
+}
+
+async function handleCart(req, res) {
+    const token = getAuthToken(req);
+    const user = getUserByToken(token);
+
+    if (!user) {
+        sendJson(res, 401, { error: "Sessao invalida." });
+        return;
+    }
+
+    if (req.method === "GET") {
+        sendJson(res, 200, {
+            items: normalizeCartItems(user.cart),
+            updatedAt: user.cartUpdatedAt || null
+        });
+        return;
+    }
+
+    if (req.method !== "POST") {
+        sendJson(res, 405, { error: "Metodo nao permitido." });
+        return;
+    }
+
+    let body;
+    try {
+        body = await readJsonBody(req);
+    } catch (error) {
+        sendJson(res, 400, { error: error.message });
+        return;
+    }
+
+    const items = normalizeCartItems(body.items);
+
+    try {
+        saveUserCart(user.id, items);
+    } catch {
+        sendJson(res, 500, { error: "Nao foi possivel salvar o carrinho." });
+        return;
+    }
+
+    sendJson(res, 200, {
+        items,
+        updatedAt: new Date().toISOString()
+    });
 }
 
 async function handleCreatePayment(req, res) {
@@ -869,6 +940,11 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname === "/api/my-orders") {
         handleMyOrders(req, res);
+        return;
+    }
+
+    if (pathname === "/api/cart") {
+        await handleCart(req, res);
         return;
     }
 

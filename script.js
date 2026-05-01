@@ -199,6 +199,52 @@ function saveCartToStorage(user = authUser) {
     localStorage.setItem(getCartStorageKey(user), JSON.stringify(sanitizeCartItems(cart)));
 }
 
+async function fetchAccountCart() {
+    if (!authToken || isLocalAuthSession()) {
+        return [];
+    }
+
+    const response = await fetch("/api/cart", {
+        headers: getAuthHeaders()
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        throw new Error(data.error || "Nao foi possivel carregar o carrinho da conta.");
+    }
+
+    return sanitizeCartItems(data.items);
+}
+
+async function saveAccountCart() {
+    if (!authToken || !authUser || isLocalAuthSession()) return;
+
+    const response = await fetch("/api/cart", {
+        method: "POST",
+        headers: getAuthHeaders({
+            "Content-Type": "application/json"
+        }),
+        body: JSON.stringify({
+            items: sanitizeCartItems(cart)
+        })
+    });
+
+    if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Nao foi possivel salvar o carrinho da conta.");
+    }
+}
+
+function persistCart() {
+    saveCartToStorage();
+
+    if (!authToken || !authUser || isLocalAuthSession()) return;
+
+    saveAccountCart().catch((error) => {
+        console.warn(error);
+    });
+}
+
 function mergeCartItems(primaryItems, secondaryItems) {
     const merged = [];
     const seen = new Set();
@@ -216,7 +262,31 @@ function mergeCartItems(primaryItems, secondaryItems) {
 
 function loadActiveCart() {
     cart = loadCartFromStorage(authUser);
-    updateCart();
+    updateCart({ skipPersist: true });
+}
+
+async function loadAccountCart(options = {}) {
+    if (!authToken || !authUser || isLocalAuthSession()) {
+        loadActiveCart();
+        return;
+    }
+
+    const localCart = sanitizeCartItems(cart.length ? cart : loadCartFromStorage(authUser));
+
+    try {
+        const accountCart = await fetchAccountCart();
+        cart = options.mergeLocalCart ? mergeCartItems(accountCart, localCart) : accountCart;
+        saveCartToStorage(authUser);
+        updateCart({ skipPersist: true });
+
+        if (options.mergeLocalCart && localCart.length) {
+            await saveAccountCart();
+        }
+    } catch (error) {
+        console.warn(error);
+        cart = localCart;
+        updateCart({ skipPersist: true });
+    }
 }
 
 function getLocalOrdersKey() {
@@ -291,16 +361,21 @@ function saveAuthState(token, user, options = {}) {
     localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
 
     if (shouldSyncCart && previousUserId !== user?.id) {
-        const savedAccountCart = loadCartFromStorage(user);
-        cart = currentCart.length ? mergeCartItems(savedAccountCart, currentCart) : savedAccountCart;
-        saveCartToStorage(user);
-        updateCart();
+        if (isLocalAuthSession()) {
+            const savedAccountCart = loadCartFromStorage(user);
+            cart = currentCart.length ? mergeCartItems(savedAccountCart, currentCart) : savedAccountCart;
+            saveCartToStorage(user);
+            updateCart({ skipPersist: true });
+        } else {
+            loadAccountCart({ mergeLocalCart: true });
+        }
     }
 
     updateAccountButtonLabel();
 }
 
 function clearAuthState() {
+    saveCartToStorage();
     authToken = "";
     authUser = null;
     localStorage.removeItem(AUTH_TOKEN_KEY);
@@ -616,7 +691,10 @@ async function refreshAuthState() {
 
     if (!authToken) return;
 
-    if (isLocalAuthSession()) return;
+    if (isLocalAuthSession()) {
+        loadActiveCart();
+        return;
+    }
 
     try {
         const response = await fetch("/api/me", {
@@ -632,6 +710,7 @@ async function refreshAuthState() {
         }
 
         saveAuthState(authToken, data.user, { syncCart: false });
+        loadAccountCart();
     } catch {
         clearAuthState();
         loadActiveCart();
@@ -641,12 +720,15 @@ async function refreshAuthState() {
 // ========================
 // ATUALIZAR CARRINHO
 // ========================
-function updateCart() {
+function updateCart(options = {}) {
     const cartItems = document.getElementById("cartItems");
     const cartTotal = document.getElementById("cartTotal");
     const cartCount = document.getElementById("cartCount");
     const checkoutBtn = document.getElementById("checkoutBtn");
-    saveCartToStorage();
+
+    if (!options.skipPersist) {
+        persistCart();
+    }
 
     cartItems.innerHTML = "";
 
