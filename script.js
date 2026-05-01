@@ -3,6 +3,7 @@ const CUSTOM_PACKAGE_DISCOUNT = 0.15;
 
 const AUTH_TOKEN_KEY = "toque_de_luz_auth_token";
 const AUTH_USER_KEY = "toque_de_luz_auth_user";
+const LOCAL_USERS_KEY = "toque_de_luz_local_users";
 
 let authToken = localStorage.getItem(AUTH_TOKEN_KEY) || "";
 let authUser = null;
@@ -24,6 +25,123 @@ function formatCurrency(value) {
 function getFirstName(fullName) {
     const name = String(fullName || "").trim();
     return name.split(" ")[0] || "Minha Conta";
+}
+
+function normalizeEmailValue(email) {
+    return String(email || "").trim().toLowerCase();
+}
+
+function getEmailValidationMessage(email) {
+    const normalizedEmail = normalizeEmailValue(email);
+
+    if (!normalizedEmail) {
+        return "Informe um e-mail.";
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(normalizedEmail)) {
+        return "Informe um e-mail valido.";
+    }
+
+    const domain = normalizedEmail.split("@")[1] || "";
+    const commonGmailTypos = ["gmai.com", "gmial.com", "gmal.com", "gmail.con", "gmail.co"];
+
+    if (commonGmailTypos.includes(domain)) {
+        return "Confira o Gmail digitado. O correto costuma ser @gmail.com.";
+    }
+
+    return "";
+}
+
+function getLocalUsers() {
+    try {
+        const storedUsers = localStorage.getItem(LOCAL_USERS_KEY);
+        const parsedUsers = storedUsers ? JSON.parse(storedUsers) : [];
+        return Array.isArray(parsedUsers) ? parsedUsers : [];
+    } catch {
+        return [];
+    }
+}
+
+function saveLocalUsers(users) {
+    localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(users));
+}
+
+function getLocalPasswordHash(password) {
+    let hash = 0;
+    const text = String(password || "");
+
+    for (let index = 0; index < text.length; index += 1) {
+        hash = ((hash << 5) - hash) + text.charCodeAt(index);
+        hash |= 0;
+    }
+
+    return String(hash);
+}
+
+function createLocalToken() {
+    if (window.crypto?.randomUUID) {
+        return `local_${window.crypto.randomUUID()}`;
+    }
+
+    return `local_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+}
+
+function registerLocalAccount(name, email, password) {
+    const normalizedEmail = normalizeEmailValue(email);
+    const users = getLocalUsers();
+
+    if (users.some((user) => normalizeEmailValue(user.email) === normalizedEmail)) {
+        throw new Error("Este e-mail ja esta cadastrado neste navegador.");
+    }
+
+    const user = {
+        id: `local_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
+        name,
+        email: normalizedEmail,
+        passwordHash: getLocalPasswordHash(password),
+        createdAt: new Date().toISOString()
+    };
+
+    users.push(user);
+    saveLocalUsers(users);
+
+    return {
+        token: createLocalToken(),
+        user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            createdAt: user.createdAt
+        }
+    };
+}
+
+function loginLocalAccount(email, password) {
+    const normalizedEmail = normalizeEmailValue(email);
+    const passwordHash = getLocalPasswordHash(password);
+    const user = getLocalUsers().find((item) => normalizeEmailValue(item.email) === normalizedEmail);
+
+    if (!user || user.passwordHash !== passwordHash) {
+        throw new Error("E-mail ou senha invalidos.");
+    }
+
+    return {
+        token: createLocalToken(),
+        user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            createdAt: user.createdAt
+        }
+    };
+}
+
+function shouldUseLocalAccountFallback(error, response) {
+    if (response && response.status !== 404 && response.status !== 405) {
+        return false;
+    }
+
+    return !response || response.status === 404 || response.status === 405 || error instanceof TypeError;
 }
 
 function setAccountMessage(message, isError = false) {
@@ -57,6 +175,10 @@ function getAuthHeaders(baseHeaders = {}) {
         headers.Authorization = `Bearer ${authToken}`;
     }
     return headers;
+}
+
+function isLocalAuthSession() {
+    return authToken.startsWith("local_") && Boolean(authUser);
 }
 
 function updateAccountButtonLabel() {
@@ -192,6 +314,11 @@ async function loadMyOrders() {
         return;
     }
 
+    if (isLocalAuthSession()) {
+        renderAccountOrders([]);
+        return;
+    }
+
     try {
         const response = await fetch("/api/my-orders", {
             headers: getAuthHeaders()
@@ -213,11 +340,18 @@ async function loginAccount(event) {
     event.preventDefault();
     setAccountMessage("");
 
-    const email = document.getElementById("loginEmail")?.value?.trim();
+    const email = normalizeEmailValue(document.getElementById("loginEmail")?.value);
     const password = document.getElementById("loginPassword")?.value || "";
+    const emailError = getEmailValidationMessage(email);
 
+    if (emailError) {
+        setAccountMessage(emailError, true);
+        return;
+    }
+
+    let response = null;
     try {
-        const response = await fetch("/api/login", {
+        response = await fetch("/api/login", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -236,6 +370,20 @@ async function loginAccount(event) {
         setAccountMessage("Login realizado com sucesso.");
         loadMyOrders();
     } catch (error) {
+        if (shouldUseLocalAccountFallback(error, response)) {
+            try {
+                const localData = loginLocalAccount(email, password);
+                saveAuthState(localData.token, localData.user);
+                showLoggedAccountSection();
+                setAccountMessage("Login realizado neste navegador.");
+                loadMyOrders();
+                return;
+            } catch (localError) {
+                setAccountMessage(localError.message || "Falha no login.", true);
+                return;
+            }
+        }
+
         setAccountMessage(error.message || "Falha no login.", true);
     }
 }
@@ -245,11 +393,18 @@ async function registerAccount(event) {
     setAccountMessage("");
 
     const name = document.getElementById("registerName")?.value?.trim();
-    const email = document.getElementById("registerEmail")?.value?.trim();
+    const email = normalizeEmailValue(document.getElementById("registerEmail")?.value);
     const password = document.getElementById("registerPassword")?.value || "";
+    const emailError = getEmailValidationMessage(email);
 
+    if (emailError) {
+        setAccountMessage(emailError, true);
+        return;
+    }
+
+    let response = null;
     try {
-        const response = await fetch("/api/register", {
+        response = await fetch("/api/register", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -268,6 +423,20 @@ async function registerAccount(event) {
         setAccountMessage("Conta criada com sucesso.");
         loadMyOrders();
     } catch (error) {
+        if (shouldUseLocalAccountFallback(error, response)) {
+            try {
+                const localData = registerLocalAccount(name, email, password);
+                saveAuthState(localData.token, localData.user);
+                showLoggedAccountSection();
+                setAccountMessage("Conta criada e salva neste navegador.");
+                renderAccountOrders([]);
+                return;
+            } catch (localError) {
+                setAccountMessage(localError.message || "Falha ao criar conta.", true);
+                return;
+            }
+        }
+
         setAccountMessage(error.message || "Falha ao criar conta.", true);
     }
 }
@@ -297,6 +466,8 @@ async function refreshAuthState() {
     updateAccountButtonLabel();
 
     if (!authToken) return;
+
+    if (isLocalAuthSession()) return;
 
     try {
         const response = await fetch("/api/me", {

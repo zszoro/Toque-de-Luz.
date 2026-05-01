@@ -153,6 +153,10 @@ function normalizeEmail(email) {
     return String(email || "").trim().toLowerCase();
 }
 
+function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+}
+
 function hashPassword(password) {
     return crypto.createHash("sha256").update(String(password || "")).digest("hex");
 }
@@ -381,7 +385,7 @@ async function handleRegister(req, res) {
         return;
     }
 
-    if (!email || !email.includes("@")) {
+    if (!isValidEmail(email)) {
         sendJson(res, 400, { error: "Informe um e-mail valido." });
         return;
     }
@@ -406,8 +410,13 @@ async function handleRegister(req, res) {
         createdAt: new Date().toISOString()
     };
 
-    users.push(user);
-    writeUsers(users);
+    try {
+        users.push(user);
+        writeUsers(users);
+    } catch {
+        sendJson(res, 500, { error: "Nao foi possivel salvar a conta. Tente novamente." });
+        return;
+    }
 
     const token = createSession(user.id);
 
