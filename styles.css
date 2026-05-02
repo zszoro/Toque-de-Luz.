@@ -13,7 +13,6 @@
     --background: #F5F5DC;
     --white: #FFFFFF;
     --shadow: rgba(0, 0, 0, 0.1);
-    --moving-header-bg: linear-gradient(120deg, #315f24 0%, #4f7f2a 24%, #6B8E23 48%, #8FBC8F 72%, #d9ead3 100%);
 }
 
 body {
@@ -31,10 +30,8 @@ body {
 
 /* Navigation */
 .navbar {
-    background: var(--moving-header-bg);
-    background-size: 260% 260%;
-    animation: headerGlowMove 12s ease-in-out infinite;
-    box-shadow: 0 2px 14px rgba(44, 62, 80, 0.18);
+    background-color: var(--white);
+    box-shadow: 0 2px 10px var(--shadow);
     position: fixed;
     width: 100%;
     top: 0;
@@ -49,15 +46,8 @@ body {
 }
 
 .logo h1 {
-    color: var(--white);
+    color: var(--primary-color);
     font-size: 1.8rem;
-    text-shadow: 0 2px 10px rgba(44, 62, 80, 0.25);
-}
-
-.logo {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
 }
 
 .nav-links {
@@ -67,38 +57,23 @@ body {
 }
 
 .nav-links a {
-    color: var(--white);
+    color: var(--text-dark);
     text-decoration: none;
     font-weight: 500;
-    text-shadow: 0 1px 8px rgba(44, 62, 80, 0.2);
-    transition: color 0.3s, opacity 0.3s;
+    transition: color 0.3s;
 }
 
 .nav-links a:hover {
-    color: var(--text-dark);
+    color: var(--primary-color);
 }
 
 /* Hero Section */
 .hero {
-    background: var(--moving-header-bg);
-    background-size: 260% 260%;
-    animation: headerGlowMove 12s ease-in-out infinite;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     color: var(--white);
     padding: 150px 20px 100px;
     text-align: center;
     margin-top: 60px;
-}
-
-@keyframes headerGlowMove {
-    0% {
-        background-position: 0% 50%;
-    }
-    50% {
-        background-position: 100% 50%;
-    }
-    100% {
-        background-position: 0% 50%;
-    }
 }
 
 .hero-content h2 {
@@ -295,6 +270,28 @@ body {
 .form-group textarea:focus {
     outline: none;
     border-color: var(--primary-color);
+}
+
+.attendance-options {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.form-group .attendance-option {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    color: var(--text-dark);
+    font-weight: 500;
+    margin-bottom: 0;
+}
+
+.form-group .attendance-option input {
+    width: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    accent-color: var(--primary-color);
 }
 
 .submit-button {
@@ -1017,32 +1014,9 @@ body.modal-open {
     color: #b2312f;
 }
 
-.account-prompt-content {
-    max-width: 430px;
-}
-
-.account-prompt-actions {
-    display: grid;
-    gap: 0.8rem;
-}
-
-.account-prompt-actions .package-button {
-    margin-top: 0;
-}
-
 @media (max-width: 768px) {
     .account-actions {
         grid-template-columns: 1fr;
-    }
-
-    .navbar .container,
-    .logo {
-        align-items: flex-start;
-    }
-
-    .logo {
-        flex-direction: column;
-        gap: 0.5rem;
     }
 }
 
@@ -1055,19 +1029,8 @@ body.modal-open {
     gap: 0.5rem;
 }
 
-.logo .account-button {
-    border: 1px solid rgba(255, 255, 255, 0.7);
-    border-radius: 999px;
-    padding: 0.45rem 0.8rem;
-    font-size: 0.9rem;
-    white-space: nowrap;
-    background-color: rgba(255, 255, 255, 0.14);
-    color: var(--white);
-    backdrop-filter: blur(8px);
-}
-
 .account-button.logged-in {
-    color: var(--white);
+    color: var(--primary-color);
 }
 
 .cart-count {
@@ -1310,17 +1273,6 @@ body.modal-open {
     margin-top: 1rem;
     padding-top: 1rem;
     border-top: 2px solid var(--primary-color);
-}
-
-.cart-notification {
-    background-color: #1f9d55;
-    color: var(--white);
-    border-radius: 8px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-    font-weight: 700;
-    max-width: min(360px, calc(100vw - 40px));
-    padding: 0.9rem 1rem;
-    animation: slideInRight 0.25s ease;
 }
 
 /* Responsive Cart */

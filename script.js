@@ -3,14 +3,9 @@ const CUSTOM_PACKAGE_DISCOUNT = 0.15;
 
 const AUTH_TOKEN_KEY = "toque_de_luz_auth_token";
 const AUTH_USER_KEY = "toque_de_luz_auth_user";
-const LOCAL_USERS_KEY = "toque_de_luz_local_users";
-const CART_KEY_PREFIX = "toque_de_luz_cart_";
-const LOCAL_ORDERS_KEY_PREFIX = "toque_de_luz_orders_";
-const WHATSAPP_NUMBER = "5512997685503";
 
 let authToken = localStorage.getItem(AUTH_TOKEN_KEY) || "";
 let authUser = null;
-let pendingRegisterEmail = "";
 
 try {
     const storedUser = localStorage.getItem(AUTH_USER_KEY);
@@ -31,321 +26,6 @@ function getFirstName(fullName) {
     return name.split(" ")[0] || "Minha Conta";
 }
 
-function normalizeEmailValue(email) {
-    return String(email || "").trim().toLowerCase();
-}
-
-function getEmailValidationMessage(email) {
-    const normalizedEmail = normalizeEmailValue(email);
-
-    if (!normalizedEmail) {
-        return "Informe um e-mail.";
-    }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(normalizedEmail)) {
-        return "Informe um e-mail valido.";
-    }
-
-    const domain = normalizedEmail.split("@")[1] || "";
-    const commonGmailTypos = ["gmai.com", "gmial.com", "gmal.com", "gmail.con", "gmail.co"];
-
-    if (commonGmailTypos.includes(domain)) {
-        return "Confira o Gmail digitado. O correto costuma ser @gmail.com.";
-    }
-
-    return "";
-}
-
-function normalizePhoneValue(phone) {
-    return String(phone || "").trim();
-}
-
-function getPhoneValidationMessage(phone) {
-    const normalizedPhone = normalizePhoneValue(phone);
-    const digits = normalizedPhone.replace(/\D/g, "");
-
-    if (!normalizedPhone) {
-        return "Informe um telefone.";
-    }
-
-    if (digits.length < 10 || digits.length > 11) {
-        return "Informe um telefone valido com DDD.";
-    }
-
-    return "";
-}
-
-function getLocalUsers() {
-    try {
-        const storedUsers = localStorage.getItem(LOCAL_USERS_KEY);
-        const parsedUsers = storedUsers ? JSON.parse(storedUsers) : [];
-        return Array.isArray(parsedUsers) ? parsedUsers : [];
-    } catch {
-        return [];
-    }
-}
-
-function saveLocalUsers(users) {
-    localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(users));
-}
-
-function getLocalPasswordHash(password) {
-    let hash = 0;
-    const text = String(password || "");
-
-    for (let index = 0; index < text.length; index += 1) {
-        hash = ((hash << 5) - hash) + text.charCodeAt(index);
-        hash |= 0;
-    }
-
-    return String(hash);
-}
-
-function createLocalToken() {
-    if (window.crypto?.randomUUID) {
-        return `local_${window.crypto.randomUUID()}`;
-    }
-
-    return `local_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
-}
-
-function registerLocalAccount(name, email, phone, password) {
-    const normalizedEmail = normalizeEmailValue(email);
-    const normalizedPhone = normalizePhoneValue(phone);
-    const users = getLocalUsers();
-
-    if (users.some((user) => normalizeEmailValue(user.email) === normalizedEmail)) {
-        throw new Error("Este e-mail ja esta cadastrado neste navegador.");
-    }
-
-    const user = {
-        id: `local_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
-        name,
-        email: normalizedEmail,
-        phone: normalizedPhone,
-        passwordHash: getLocalPasswordHash(password),
-        createdAt: new Date().toISOString()
-    };
-
-    users.push(user);
-    saveLocalUsers(users);
-
-    return {
-        token: createLocalToken(),
-        user: {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            phone: user.phone,
-            createdAt: user.createdAt
-        }
-    };
-}
-
-function loginLocalAccount(email, password) {
-    const normalizedEmail = normalizeEmailValue(email);
-    const passwordHash = getLocalPasswordHash(password);
-    const user = getLocalUsers().find((item) => normalizeEmailValue(item.email) === normalizedEmail);
-
-    if (!user || user.passwordHash !== passwordHash) {
-        throw new Error("E-mail ou senha invalidos.");
-    }
-
-    return {
-        token: createLocalToken(),
-        user: {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            phone: user.phone || "",
-            createdAt: user.createdAt
-        }
-    };
-}
-
-function shouldUseLocalAccountFallback(error, response) {
-    if (error?.message?.toLowerCase().includes("banco permanente")) {
-        return false;
-    }
-
-    if (response && response.status !== 404 && response.status !== 405) {
-        return false;
-    }
-
-    return !response || response.status === 404 || response.status === 405 || error instanceof TypeError;
-}
-
-function getCartStorageKey(user = authUser) {
-    return `${CART_KEY_PREFIX}${user?.id || "guest"}`;
-}
-
-function sanitizeCartItems(items) {
-    if (!Array.isArray(items)) return [];
-
-    return items
-        .map((item) => ({
-            name: String(item?.name || "").trim(),
-            price: Number(item?.price || 0),
-            duration: String(item?.duration || "").trim()
-        }))
-        .filter((item) => item.name && Number.isFinite(item.price) && item.price > 0);
-}
-
-function loadCartFromStorage(user = authUser) {
-    try {
-        const storedCart = localStorage.getItem(getCartStorageKey(user));
-        return sanitizeCartItems(storedCart ? JSON.parse(storedCart) : []);
-    } catch {
-        return [];
-    }
-}
-
-function saveCartToStorage(user = authUser) {
-    localStorage.setItem(getCartStorageKey(user), JSON.stringify(sanitizeCartItems(cart)));
-}
-
-async function fetchAccountCart() {
-    if (!authToken || isLocalAuthSession()) {
-        return [];
-    }
-
-    const response = await fetch("/api/cart", {
-        headers: getAuthHeaders()
-    });
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-        throw new Error(data.error || "Nao foi possivel carregar o carrinho da conta.");
-    }
-
-    return sanitizeCartItems(data.items);
-}
-
-async function saveAccountCart() {
-    if (!authToken || !authUser || isLocalAuthSession()) return;
-
-    const response = await fetch("/api/cart", {
-        method: "POST",
-        headers: getAuthHeaders({
-            "Content-Type": "application/json"
-        }),
-        body: JSON.stringify({
-            items: sanitizeCartItems(cart)
-        })
-    });
-
-    if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || "Nao foi possivel salvar o carrinho da conta.");
-    }
-}
-
-function persistCart() {
-    saveCartToStorage();
-
-    if (!authToken || !authUser || isLocalAuthSession()) return;
-
-    saveAccountCart().catch((error) => {
-        console.warn(error);
-    });
-}
-
-function mergeCartItems(primaryItems, secondaryItems) {
-    const merged = [];
-    const seen = new Set();
-
-    [...primaryItems, ...secondaryItems].forEach((item) => {
-        const key = `${item.name}|${item.price}|${item.duration}`;
-        if (seen.has(key)) return;
-
-        seen.add(key);
-        merged.push(item);
-    });
-
-    return merged;
-}
-
-function loadActiveCart() {
-    cart = loadCartFromStorage(authUser);
-    updateCart({ skipPersist: true });
-}
-
-async function loadAccountCart(options = {}) {
-    if (!authToken || !authUser || isLocalAuthSession()) {
-        loadActiveCart();
-        return;
-    }
-
-    const localCart = sanitizeCartItems(cart.length ? cart : loadCartFromStorage(authUser));
-
-    try {
-        const accountCart = await fetchAccountCart();
-        cart = options.mergeLocalCart ? mergeCartItems(accountCart, localCart) : accountCart;
-        saveCartToStorage(authUser);
-        updateCart({ skipPersist: true });
-
-        if (options.mergeLocalCart && localCart.length) {
-            await saveAccountCart();
-        }
-    } catch (error) {
-        console.warn(error);
-        cart = localCart;
-        updateCart({ skipPersist: true });
-    }
-}
-
-function getLocalOrdersKey() {
-    return `${LOCAL_ORDERS_KEY_PREFIX}${authUser?.id || "guest"}`;
-}
-
-function getLocalOrders() {
-    try {
-        const storedOrders = localStorage.getItem(getLocalOrdersKey());
-        const parsedOrders = storedOrders ? JSON.parse(storedOrders) : [];
-        return Array.isArray(parsedOrders) ? parsedOrders : [];
-    } catch {
-        return [];
-    }
-}
-
-function saveLocalPendingOrder(booking) {
-    const orders = getLocalOrders();
-    const order = {
-        id: `local_order_${Date.now()}`,
-        items: sanitizeCartItems(cart),
-        booking,
-        userId: authUser?.id || null,
-        userEmail: authUser?.email || booking.email || null,
-        status: "pending",
-        createdAt: new Date().toISOString()
-    };
-
-    orders.unshift(order);
-    localStorage.setItem(getLocalOrdersKey(), JSON.stringify(orders));
-    return order;
-}
-
-function buildWhatsAppCheckoutUrl(order) {
-    const itemLines = order.items
-        .map((item) => `- ${item.name} (${item.duration}) - ${formatCurrency(item.price)}`)
-        .join("\n");
-    const total = order.items.reduce((sum, item) => sum + item.price, 0);
-    const booking = order.booking;
-    const message = [
-        "Ola, quero finalizar este agendamento:",
-        itemLines,
-        `Total: ${formatCurrency(total)}`,
-        `Nome: ${booking.name}`,
-        `E-mail: ${booking.email}`,
-        `Telefone: ${booking.phone}`,
-        `Data: ${booking.date}`,
-        `Horario: ${booking.time}`,
-        booking.notes ? `Observacoes: ${booking.notes}` : ""
-    ].filter(Boolean).join("\n");
-
-    return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-}
-
 function setAccountMessage(message, isError = false) {
     const messageEl = document.getElementById("accountMessage");
     if (!messageEl) return;
@@ -355,32 +35,15 @@ function setAccountMessage(message, isError = false) {
     messageEl.classList.toggle("success", Boolean(message && !isError));
 }
 
-function saveAuthState(token, user, options = {}) {
-    const previousUserId = authUser?.id || "";
-    const shouldSyncCart = options.syncCart !== false;
-    const currentCart = sanitizeCartItems(cart);
-
+function saveAuthState(token, user) {
     authToken = token;
     authUser = user;
     localStorage.setItem(AUTH_TOKEN_KEY, token);
     localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
-
-    if (shouldSyncCart && previousUserId !== user?.id) {
-        if (isLocalAuthSession()) {
-            const savedAccountCart = loadCartFromStorage(user);
-            cart = currentCart.length ? mergeCartItems(savedAccountCart, currentCart) : savedAccountCart;
-            saveCartToStorage(user);
-            updateCart({ skipPersist: true });
-        } else {
-            loadAccountCart({ mergeLocalCart: true });
-        }
-    }
-
     updateAccountButtonLabel();
 }
 
 function clearAuthState() {
-    saveCartToStorage();
     authToken = "";
     authUser = null;
     localStorage.removeItem(AUTH_TOKEN_KEY);
@@ -394,10 +57,6 @@ function getAuthHeaders(baseHeaders = {}) {
         headers.Authorization = `Bearer ${authToken}`;
     }
     return headers;
-}
-
-function isLocalAuthSession() {
-    return authToken.startsWith("local_") && Boolean(authUser);
 }
 
 function updateAccountButtonLabel() {
@@ -422,7 +81,7 @@ function closeCartSidebar() {
     }
 }
 
-function openAccountModal(event, preferredTab = "login") {
+function openAccountModal(event) {
     if (event) event.preventDefault();
 
     const modal = document.getElementById("accountModal");
@@ -437,7 +96,7 @@ function openAccountModal(event, preferredTab = "login") {
         loadMyOrders();
     } else {
         showAuthSection();
-        switchAccountTab(preferredTab);
+        switchAccountTab("login");
     }
 }
 
@@ -455,7 +114,6 @@ function switchAccountTab(tab) {
     const registerTab = document.getElementById("registerTabBtn");
     const loginForm = document.getElementById("loginForm");
     const registerForm = document.getElementById("registerForm");
-    const verifyRegisterForm = document.getElementById("verifyRegisterForm");
 
     if (!loginTab || !registerTab || !loginForm || !registerForm) return;
 
@@ -465,29 +123,7 @@ function switchAccountTab(tab) {
     registerTab.classList.toggle("active", !showLogin);
     loginForm.classList.toggle("hidden-form", !showLogin);
     registerForm.classList.toggle("hidden-form", showLogin);
-    if (verifyRegisterForm) verifyRegisterForm.classList.add("hidden-form");
     setAccountMessage("");
-}
-
-function showRegisterVerification(email) {
-    pendingRegisterEmail = normalizeEmailValue(email);
-
-    const loginTab = document.getElementById("loginTabBtn");
-    const registerTab = document.getElementById("registerTabBtn");
-    const loginForm = document.getElementById("loginForm");
-    const registerForm = document.getElementById("registerForm");
-    const verifyRegisterForm = document.getElementById("verifyRegisterForm");
-    const codeInput = document.getElementById("registerCode");
-
-    if (loginTab) loginTab.classList.remove("active");
-    if (registerTab) registerTab.classList.add("active");
-    if (loginForm) loginForm.classList.add("hidden-form");
-    if (registerForm) registerForm.classList.add("hidden-form");
-    if (verifyRegisterForm) verifyRegisterForm.classList.remove("hidden-form");
-    if (codeInput) {
-        codeInput.value = "";
-        codeInput.focus();
-    }
 }
 
 function showAuthSection() {
@@ -511,11 +147,9 @@ function showLoggedAccountSection() {
 
     const nameDisplay = document.getElementById("accountNameDisplay");
     const emailDisplay = document.getElementById("accountEmailDisplay");
-    const phoneDisplay = document.getElementById("accountPhoneDisplay");
 
     if (nameDisplay) nameDisplay.textContent = authUser?.name || "";
     if (emailDisplay) emailDisplay.textContent = authUser?.email || "";
-    if (phoneDisplay) phoneDisplay.textContent = authUser?.phone || "";
 }
 
 function renderAccountOrders(orders) {
@@ -558,11 +192,6 @@ async function loadMyOrders() {
         return;
     }
 
-    if (isLocalAuthSession()) {
-        renderAccountOrders(getLocalOrders());
-        return;
-    }
-
     try {
         const response = await fetch("/api/my-orders", {
             headers: getAuthHeaders()
@@ -584,18 +213,11 @@ async function loginAccount(event) {
     event.preventDefault();
     setAccountMessage("");
 
-    const email = normalizeEmailValue(document.getElementById("loginEmail")?.value);
+    const email = document.getElementById("loginEmail")?.value?.trim();
     const password = document.getElementById("loginPassword")?.value || "";
-    const emailError = getEmailValidationMessage(email);
 
-    if (emailError) {
-        setAccountMessage(emailError, true);
-        return;
-    }
-
-    let response = null;
     try {
-        response = await fetch("/api/login", {
+        const response = await fetch("/api/login", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -614,20 +236,6 @@ async function loginAccount(event) {
         setAccountMessage("Login realizado com sucesso.");
         loadMyOrders();
     } catch (error) {
-        if (shouldUseLocalAccountFallback(error, response)) {
-            try {
-                const localData = loginLocalAccount(email, password);
-                saveAuthState(localData.token, localData.user);
-                showLoggedAccountSection();
-                setAccountMessage("Login realizado neste navegador.");
-                loadMyOrders();
-                return;
-            } catch (localError) {
-                setAccountMessage(localError.message || "Falha no login.", true);
-                return;
-            }
-        }
-
         setAccountMessage(error.message || "Falha no login.", true);
     }
 }
@@ -637,30 +245,16 @@ async function registerAccount(event) {
     setAccountMessage("");
 
     const name = document.getElementById("registerName")?.value?.trim();
-    const email = normalizeEmailValue(document.getElementById("registerEmail")?.value);
-    const phone = normalizePhoneValue(document.getElementById("registerPhone")?.value);
+    const email = document.getElementById("registerEmail")?.value?.trim();
     const password = document.getElementById("registerPassword")?.value || "";
-    const emailError = getEmailValidationMessage(email);
-    const phoneError = getPhoneValidationMessage(phone);
 
-    if (emailError) {
-        setAccountMessage(emailError, true);
-        return;
-    }
-
-    if (phoneError) {
-        setAccountMessage(phoneError, true);
-        return;
-    }
-
-    let response = null;
     try {
-        response = await fetch("/api/register", {
+        const response = await fetch("/api/register", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ name, email, phone, password })
+            body: JSON.stringify({ name, email, password })
         });
 
         const data = await response.json().catch(() => ({}));
@@ -669,68 +263,12 @@ async function registerAccount(event) {
             throw new Error(data.error || "Nao foi possivel criar conta.");
         }
 
-        if (data.verificationRequired) {
-            showRegisterVerification(data.email || email);
-            setAccountMessage(data.message || "Digite o codigo enviado para seu e-mail.");
-            return;
-        }
-
         saveAuthState(data.token, data.user);
         showLoggedAccountSection();
         setAccountMessage("Conta criada com sucesso.");
         loadMyOrders();
     } catch (error) {
-        if (shouldUseLocalAccountFallback(error, response)) {
-            try {
-                const localData = registerLocalAccount(name, email, phone, password);
-                saveAuthState(localData.token, localData.user);
-                showLoggedAccountSection();
-                setAccountMessage("Conta criada e salva neste navegador.");
-                renderAccountOrders([]);
-                return;
-            } catch (localError) {
-                setAccountMessage(localError.message || "Falha ao criar conta.", true);
-                return;
-            }
-        }
-
         setAccountMessage(error.message || "Falha ao criar conta.", true);
-    }
-}
-
-async function verifyRegisterCode(event) {
-    event.preventDefault();
-    setAccountMessage("");
-
-    const email = pendingRegisterEmail || normalizeEmailValue(document.getElementById("registerEmail")?.value);
-    const code = String(document.getElementById("registerCode")?.value || "").trim();
-
-    if (!/^\d{6}$/.test(code)) {
-        setAccountMessage("Informe o codigo de 6 numeros.", true);
-        return;
-    }
-
-    try {
-        const response = await fetch("/api/verify-register", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ email, code })
-        });
-
-        const data = await response.json().catch(() => ({}));
-
-        if (!response.ok) {
-            throw new Error(data.error || "Nao foi possivel verificar o e-mail.");
-        }
-
-        saveAuthState(data.token, data.user);
-        showLoggedAccountSection();
-        setAccountMessage("E-mail verificado. Conta criada com sucesso.");
-        loadMyOrders();
-    } catch (error) {
-        setAccountMessage(error.message || "Falha ao verificar o e-mail.", true);
     }
 }
 
@@ -749,7 +287,6 @@ async function logoutAccount() {
     }
 
     clearAuthState();
-    loadActiveCart();
     showAuthSection();
     switchAccountTab("login");
     renderAccountOrders([]);
@@ -761,11 +298,6 @@ async function refreshAuthState() {
 
     if (!authToken) return;
 
-    if (isLocalAuthSession()) {
-        loadActiveCart();
-        return;
-    }
-
     try {
         const response = await fetch("/api/me", {
             headers: getAuthHeaders()
@@ -775,30 +307,23 @@ async function refreshAuthState() {
 
         if (!response.ok || !data.user) {
             clearAuthState();
-            loadActiveCart();
             return;
         }
 
-        saveAuthState(authToken, data.user, { syncCart: false });
-        loadAccountCart();
+        saveAuthState(authToken, data.user);
     } catch {
         clearAuthState();
-        loadActiveCart();
     }
 }
 
 // ========================
 // ATUALIZAR CARRINHO
 // ========================
-function updateCart(options = {}) {
+function updateCart() {
     const cartItems = document.getElementById("cartItems");
     const cartTotal = document.getElementById("cartTotal");
     const cartCount = document.getElementById("cartCount");
     const checkoutBtn = document.getElementById("checkoutBtn");
-
-    if (!options.skipPersist) {
-        persistCart();
-    }
 
     cartItems.innerHTML = "";
 
@@ -1049,7 +574,6 @@ function prefillCheckoutFromAccount() {
 
     const nameInput = document.getElementById("checkoutName");
     const emailInput = document.getElementById("checkoutEmail");
-    const phoneInput = document.getElementById("checkoutPhone");
 
     if (nameInput && !nameInput.value.trim()) {
         nameInput.value = authUser.name || "";
@@ -1058,50 +582,9 @@ function prefillCheckoutFromAccount() {
     if (emailInput && !emailInput.value.trim()) {
         emailInput.value = authUser.email || "";
     }
-
-    if (phoneInput && !phoneInput.value.trim()) {
-        phoneInput.value = authUser.phone || "";
-    }
 }
 
-function closeCheckoutAccountPrompt() {
-    const modal = document.getElementById("checkoutAccountPrompt");
-    if (!modal) return;
-
-    modal.style.display = "none";
-    document.body.classList.remove("modal-open");
-}
-
-function goToCreateAccountFromCheckout() {
-    closeCheckoutAccountPrompt();
-    openAccountModal(null, "register");
-}
-
-function continueCheckoutWithoutAccount() {
-    closeCheckoutAccountPrompt();
-    openCheckoutModal(true);
-}
-
-function handleCheckoutStart() {
-    if (!authUser) {
-        closeCartSidebar();
-        const modal = document.getElementById("checkoutAccountPrompt");
-        if (modal) {
-            modal.style.display = "flex";
-            document.body.classList.add("modal-open");
-            return;
-        }
-    }
-
-    openCheckoutModal(true);
-}
-
-function openCheckoutModal(skipAccountPrompt = false) {
-    if (!skipAccountPrompt && !authUser) {
-        handleCheckoutStart();
-        return;
-    }
-
+function openCheckoutModal() {
     closeCartSidebar();
     prefillCheckoutFromAccount();
 
@@ -1144,7 +627,6 @@ function closeConfirmationModal() {
 function bindAccountForms() {
     const loginForm = document.getElementById("loginForm");
     const registerForm = document.getElementById("registerForm");
-    const verifyRegisterForm = document.getElementById("verifyRegisterForm");
 
     if (loginForm) {
         loginForm.addEventListener("submit", loginAccount);
@@ -1152,10 +634,6 @@ function bindAccountForms() {
 
     if (registerForm) {
         registerForm.addEventListener("submit", registerAccount);
-    }
-
-    if (verifyRegisterForm) {
-        verifyRegisterForm.addEventListener("submit", verifyRegisterCode);
     }
 }
 
@@ -1166,7 +644,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("checkoutForm");
     bindCustomPackageControls();
     bindAccountForms();
-    loadActiveCart();
     refreshAuthState();
 
     if (form) {
@@ -1175,27 +652,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (cart.length === 0) return;
 
-            const booking = {
-                name: document.getElementById("checkoutName")?.value?.trim() || "",
-                email: normalizeEmailValue(document.getElementById("checkoutEmail")?.value),
-                phone: normalizePhoneValue(document.getElementById("checkoutPhone")?.value),
-                date: document.getElementById("checkoutDate")?.value || "",
-                time: document.getElementById("checkoutTime")?.value || "",
-                notes: document.getElementById("checkoutNotes")?.value?.trim() || ""
-            };
-            const checkoutEmailError = getEmailValidationMessage(booking.email);
-            const checkoutPhoneError = getPhoneValidationMessage(booking.phone);
-
-            if (checkoutEmailError) {
-                alert(checkoutEmailError);
-                return;
-            }
-
-            if (checkoutPhoneError) {
-                alert(checkoutPhoneError);
-                return;
-            }
-
             const submitButton = form.querySelector("button[type='submit']");
             const originalButtonText = submitButton ? submitButton.textContent : "";
 
@@ -1203,6 +659,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 submitButton.disabled = true;
                 submitButton.textContent = "Processando...";
             }
+
+            const booking = {
+                name: document.getElementById("checkoutName")?.value?.trim() || "",
+                email: document.getElementById("checkoutEmail")?.value?.trim() || "",
+                phone: document.getElementById("checkoutPhone")?.value?.trim() || "",
+                attendanceLocation: document.querySelector("input[name='attendanceLocation']:checked")?.value || "",
+                date: document.getElementById("checkoutDate")?.value || "",
+                time: document.getElementById("checkoutTime")?.value || "",
+                notes: document.getElementById("checkoutNotes")?.value?.trim() || ""
+            };
 
             try {
                 const response = await fetch("/api/create-payment", {
@@ -1230,9 +696,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             } catch (error) {
                 console.error(error);
-                const localOrder = saveLocalPendingOrder(booking);
-                alert("O pagamento online nao abriu agora. Seu pedido foi salvo e vamos continuar pelo WhatsApp.");
-                window.location.href = buildWhatsAppCheckoutUrl(localOrder);
+                alert(error.message || "Erro no pagamento");
             } finally {
                 if (submitButton) {
                     submitButton.disabled = false;
@@ -1244,6 +708,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const checkoutBtn = document.getElementById("checkoutBtn");
     if (checkoutBtn) {
-        checkoutBtn.onclick = handleCheckoutStart;
+        checkoutBtn.onclick = openCheckoutModal;
     }
 });

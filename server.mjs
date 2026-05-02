@@ -153,19 +153,6 @@ function normalizeEmail(email) {
     return String(email || "").trim().toLowerCase();
 }
 
-function isValidEmail(email) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
-}
-
-function normalizePhone(phone) {
-    return String(phone || "").trim();
-}
-
-function isValidPhone(phone) {
-    const digits = normalizePhone(phone).replace(/\D/g, "");
-    return digits.length >= 10 && digits.length <= 11;
-}
-
 function hashPassword(password) {
     return crypto.createHash("sha256").update(String(password || "")).digest("hex");
 }
@@ -175,33 +162,8 @@ function sanitizeUser(user) {
         id: user.id,
         name: user.name,
         email: user.email,
-        phone: user.phone || "",
         createdAt: user.createdAt
     };
-}
-
-function normalizeCartItems(items) {
-    if (!Array.isArray(items)) return [];
-
-    return items
-        .map((item) => ({
-            name: String(item?.name || "").trim(),
-            price: Number(item?.price || 0),
-            duration: String(item?.duration || "").trim()
-        }))
-        .filter((item) => item.name && Number.isFinite(item.price) && item.price > 0);
-}
-
-function saveUserCart(userId, items) {
-    const users = readUsers();
-    const index = users.findIndex((user) => user.id === userId);
-
-    if (index === -1) return false;
-
-    users[index].cart = normalizeCartItems(items);
-    users[index].cartUpdatedAt = new Date().toISOString();
-    writeUsers(users);
-    return true;
 }
 
 function createSession(userId) {
@@ -349,6 +311,7 @@ function normalizeBooking(booking) {
         name: String(booking?.name || "").trim(),
         email: normalizeEmail(booking?.email),
         phone: String(booking?.phone || "").trim(),
+        attendanceLocation: String(booking?.attendanceLocation || "").trim(),
         date: String(booking?.date || "").trim(),
         time: String(booking?.time || "").trim(),
         notes: String(booking?.notes || "").trim()
@@ -412,7 +375,6 @@ async function handleRegister(req, res) {
 
     const name = String(body.name || "").trim();
     const email = normalizeEmail(body.email);
-    const phone = normalizePhone(body.phone);
     const password = String(body.password || "");
 
     if (name.length < 2) {
@@ -420,13 +382,8 @@ async function handleRegister(req, res) {
         return;
     }
 
-    if (!isValidEmail(email)) {
+    if (!email || !email.includes("@")) {
         sendJson(res, 400, { error: "Informe um e-mail valido." });
-        return;
-    }
-
-    if (!isValidPhone(phone)) {
-        sendJson(res, 400, { error: "Informe um telefone valido com DDD." });
         return;
     }
 
@@ -446,20 +403,12 @@ async function handleRegister(req, res) {
         id: `usr_${Date.now()}_${Math.floor(Math.random() * 10_000)}`,
         name,
         email,
-        phone,
-        cart: [],
-        cartUpdatedAt: null,
         passwordHash: hashPassword(password),
         createdAt: new Date().toISOString()
     };
 
-    try {
-        users.push(user);
-        writeUsers(users);
-    } catch {
-        sendJson(res, 500, { error: "Nao foi possivel salvar a conta. Tente novamente." });
-        return;
-    }
+    users.push(user);
+    writeUsers(users);
 
     const token = createSession(user.id);
 
@@ -550,51 +499,6 @@ function handleMyOrders(req, res) {
     sendJson(res, 200, { orders });
 }
 
-async function handleCart(req, res) {
-    const token = getAuthToken(req);
-    const user = getUserByToken(token);
-
-    if (!user) {
-        sendJson(res, 401, { error: "Sessao invalida." });
-        return;
-    }
-
-    if (req.method === "GET") {
-        sendJson(res, 200, {
-            items: normalizeCartItems(user.cart),
-            updatedAt: user.cartUpdatedAt || null
-        });
-        return;
-    }
-
-    if (req.method !== "POST") {
-        sendJson(res, 405, { error: "Metodo nao permitido." });
-        return;
-    }
-
-    let body;
-    try {
-        body = await readJsonBody(req);
-    } catch (error) {
-        sendJson(res, 400, { error: error.message });
-        return;
-    }
-
-    const items = normalizeCartItems(body.items);
-
-    try {
-        saveUserCart(user.id, items);
-    } catch {
-        sendJson(res, 500, { error: "Nao foi possivel salvar o carrinho." });
-        return;
-    }
-
-    sendJson(res, 200, {
-        items,
-        updatedAt: new Date().toISOString()
-    });
-}
-
 async function handleCreatePayment(req, res) {
     if (req.method !== "POST") {
         sendJson(res, 405, { error: "Metodo nao permitido." });
@@ -626,22 +530,6 @@ async function handleCreatePayment(req, res) {
     const booking = normalizeBooking(body.booking);
     const accountToken = getAuthToken(req, body);
     const user = getUserByToken(accountToken);
-    if (user) {
-        if (!booking.name) booking.name = user.name || "";
-        if (!booking.email) booking.email = user.email || "";
-        if (!booking.phone) booking.phone = user.phone || "";
-    }
-
-    if (!isValidEmail(booking.email)) {
-        sendJson(res, 400, { error: "Informe um e-mail valido para finalizar." });
-        return;
-    }
-
-    if (!isValidPhone(booking.phone)) {
-        sendJson(res, 400, { error: "Informe um telefone valido com DDD para finalizar." });
-        return;
-    }
-
     const orderId = `${Date.now()}-${Math.floor(Math.random() * 10_000)}`;
 
     const webhookBaseUrl = resolveWebhookPublicUrl();
@@ -940,11 +828,6 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname === "/api/my-orders") {
         handleMyOrders(req, res);
-        return;
-    }
-
-    if (pathname === "/api/cart") {
-        await handleCart(req, res);
         return;
     }
 

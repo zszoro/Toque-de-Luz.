@@ -12,14 +12,16 @@
             <div class="container">
                 <div class="logo">
                     <h1>✨ Toque de Luz</h1>
-                    <a href="#" id="accountButton" class="account-button" onclick="openAccountModal(event)">
-                        <span id="accountButtonLabel">Minha Conta</span>
-                    </a>
                 </div>
                 <ul class="nav-links">
                     <li><a href="#home">Início</a></li>
                     <li><a href="#services">Serviços</a></li>
                     <li><a href="#contact">Contato</a></li>
+                    <li>
+                        <a href="#" id="accountButton" class="account-button" onclick="openAccountModal(event)">
+                            <span id="accountButtonLabel">Minha Conta</span>
+                        </a>
+                    </li>
                     <li>
                         <a href="#" id="cartButton" class="cart-button" onclick="toggleCart(event)">
                             🛒 Carrinho <span id="cartCount" class="cart-count">0</span>
@@ -83,6 +85,12 @@
                         <p class="duration">60 minutos</p>
                         <p class="price">R$ 100</p>
                         <button class="add-to-cart-btn" onclick="addToCart('Massagem com Equilíbrio de Chakras', 100, '60min')">Adicionar ao Carrinho</button>
+                    </div>
+                    <div class="service-card">
+                        <h4>Quiki Massagem</h4>
+                        <p class="duration">30 minutos</p>
+                        <p class="price">R$ 60</p>
+                        <button class="add-to-cart-btn" onclick="addToCart('Quiki Massagem', 60, '30min')">Adicionar ao Carrinho</button>
                     </div>
                 </div>
             </div>
@@ -238,6 +246,13 @@
                         </label>
                         <input type="number" class="quantity-input" min="0" max="10" value="0">
                     </div>
+                    <div class="modal-service-item">
+                        <label>
+                            <input type="checkbox" class="service-checkbox" data-name="Quiki Massagem" data-price="60">
+                            <span>Quiki Massagem (30min) - R$ 60</span>
+                        </label>
+                        <input type="number" class="quantity-input" min="0" max="10" value="0">
+                    </div>
                 </div>
 
                 <div class="modal-category">
@@ -362,23 +377,10 @@
                         <input type="email" id="registerEmail" required>
                     </div>
                     <div class="form-group">
-                        <label for="registerPhone">Telefone</label>
-                        <input type="tel" id="registerPhone" required>
-                    </div>
-                    <div class="form-group">
                         <label for="registerPassword">Senha</label>
                         <input type="password" id="registerPassword" minlength="6" required>
                     </div>
                     <button type="submit" class="submit-button">Criar Conta</button>
-                </form>
-
-                <form id="verifyRegisterForm" class="booking-form hidden-form">
-                    <div class="form-group">
-                        <label for="registerCode">Codigo enviado por e-mail</label>
-                        <input type="text" id="registerCode" inputmode="numeric" maxlength="6" required>
-                    </div>
-                    <button type="submit" class="submit-button">Verificar E-mail</button>
-                    <button type="button" class="package-button custom-button" onclick="switchAccountTab('register')">Voltar</button>
                 </form>
             </div>
 
@@ -386,7 +388,6 @@
                 <div class="account-summary">
                     <h3 id="accountNameDisplay"></h3>
                     <p id="accountEmailDisplay"></p>
-                    <p id="accountPhoneDisplay"></p>
                 </div>
 
                 <div class="account-actions">
@@ -418,20 +419,7 @@
                 <span>Total:</span>
                 <span id="cartTotal">R$ 0,00</span>
             </div>
-            <button class="checkout-btn" onclick="handleCheckoutStart()" disabled id="checkoutBtn">Finalizar Compra</button>
-        </div>
-    </div>
-
-    <!-- Account Prompt Modal -->
-    <div id="checkoutAccountPrompt" class="modal">
-        <div class="modal-content account-prompt-content">
-            <span class="close" onclick="closeCheckoutAccountPrompt()">&times;</span>
-            <h2>Quer salvar seu carrinho?</h2>
-            <p class="modal-subtitle">Crie uma conta para manter seus itens salvos e usar seus dados no agendamento.</p>
-            <div class="account-prompt-actions">
-                <button type="button" class="submit-button" onclick="goToCreateAccountFromCheckout()">Criar Conta</button>
-                <button type="button" class="package-button custom-button" onclick="continueCheckoutWithoutAccount()">Continuar sem conta</button>
-            </div>
+            <button class="checkout-btn" onclick="openCheckoutModal()" disabled id="checkoutBtn">Finalizar Compra</button>
         </div>
     </div>
 
@@ -465,6 +453,20 @@
                 <div class="form-group">
                     <label for="checkoutPhone">Telefone *</label>
                     <input type="tel" id="checkoutPhone" name="phone" required>
+                </div>
+
+                <div class="form-group attendance-location-group">
+                    <label>Onde voc&ecirc; deseja ser atendido? *</label>
+                    <div class="attendance-options">
+                        <label class="attendance-option">
+                            <input type="radio" name="attendanceLocation" value="Na clinica" required>
+                            <span>Na cl&iacute;nica</span>
+                        </label>
+                        <label class="attendance-option">
+                            <input type="radio" name="attendanceLocation" value="Atendimento a domicilio" required>
+                            <span>atendimento a domic&iacute;lio</span>
+                        </label>
+                    </div>
                 </div>
 
                 <div class="form-row">
