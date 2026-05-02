@@ -1,10 +1,10 @@
 import {
-    createSession,
-    createUser,
+    generateVerificationCode,
     getUserByEmail,
     isValidEmail,
     isValidPhone,
-    sanitizeUser
+    saveEmailVerification,
+    sendVerificationEmail
 } from "../lib/store.js";
 import { sendMethodNotAllowed } from "./_auth.js";
 
@@ -39,12 +39,14 @@ export default async function handler(req, res) {
             return res.status(409).json({ error: "Este e-mail ja esta cadastrado." });
         }
 
-        const user = await createUser({ name: cleanName, email, phone, password: cleanPassword });
-        const token = await createSession(user.id);
+        const code = generateVerificationCode();
+        await saveEmailVerification({ name: cleanName, email, phone, password: cleanPassword, code });
+        await sendVerificationEmail(email, code);
 
-        return res.status(201).json({
-            user: sanitizeUser(user),
-            token
+        return res.status(200).json({
+            verificationRequired: true,
+            email: String(email || "").trim().toLowerCase(),
+            message: "Enviamos um codigo para seu e-mail. Digite o codigo para criar a conta."
         });
     } catch (error) {
         console.error(error);

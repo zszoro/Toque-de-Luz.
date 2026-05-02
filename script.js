@@ -10,6 +10,7 @@ const WHATSAPP_NUMBER = "5512997685503";
 
 let authToken = localStorage.getItem(AUTH_TOKEN_KEY) || "";
 let authUser = null;
+let pendingRegisterEmail = "";
 
 try {
     const storedUser = localStorage.getItem(AUTH_USER_KEY);
@@ -454,6 +455,7 @@ function switchAccountTab(tab) {
     const registerTab = document.getElementById("registerTabBtn");
     const loginForm = document.getElementById("loginForm");
     const registerForm = document.getElementById("registerForm");
+    const verifyRegisterForm = document.getElementById("verifyRegisterForm");
 
     if (!loginTab || !registerTab || !loginForm || !registerForm) return;
 
@@ -463,7 +465,29 @@ function switchAccountTab(tab) {
     registerTab.classList.toggle("active", !showLogin);
     loginForm.classList.toggle("hidden-form", !showLogin);
     registerForm.classList.toggle("hidden-form", showLogin);
+    if (verifyRegisterForm) verifyRegisterForm.classList.add("hidden-form");
     setAccountMessage("");
+}
+
+function showRegisterVerification(email) {
+    pendingRegisterEmail = normalizeEmailValue(email);
+
+    const loginTab = document.getElementById("loginTabBtn");
+    const registerTab = document.getElementById("registerTabBtn");
+    const loginForm = document.getElementById("loginForm");
+    const registerForm = document.getElementById("registerForm");
+    const verifyRegisterForm = document.getElementById("verifyRegisterForm");
+    const codeInput = document.getElementById("registerCode");
+
+    if (loginTab) loginTab.classList.remove("active");
+    if (registerTab) registerTab.classList.add("active");
+    if (loginForm) loginForm.classList.add("hidden-form");
+    if (registerForm) registerForm.classList.add("hidden-form");
+    if (verifyRegisterForm) verifyRegisterForm.classList.remove("hidden-form");
+    if (codeInput) {
+        codeInput.value = "";
+        codeInput.focus();
+    }
 }
 
 function showAuthSection() {
@@ -645,6 +669,12 @@ async function registerAccount(event) {
             throw new Error(data.error || "Nao foi possivel criar conta.");
         }
 
+        if (data.verificationRequired) {
+            showRegisterVerification(data.email || email);
+            setAccountMessage(data.message || "Digite o codigo enviado para seu e-mail.");
+            return;
+        }
+
         saveAuthState(data.token, data.user);
         showLoggedAccountSection();
         setAccountMessage("Conta criada com sucesso.");
@@ -665,6 +695,42 @@ async function registerAccount(event) {
         }
 
         setAccountMessage(error.message || "Falha ao criar conta.", true);
+    }
+}
+
+async function verifyRegisterCode(event) {
+    event.preventDefault();
+    setAccountMessage("");
+
+    const email = pendingRegisterEmail || normalizeEmailValue(document.getElementById("registerEmail")?.value);
+    const code = String(document.getElementById("registerCode")?.value || "").trim();
+
+    if (!/^\d{6}$/.test(code)) {
+        setAccountMessage("Informe o codigo de 6 numeros.", true);
+        return;
+    }
+
+    try {
+        const response = await fetch("/api/verify-register", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ email, code })
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            throw new Error(data.error || "Nao foi possivel verificar o e-mail.");
+        }
+
+        saveAuthState(data.token, data.user);
+        showLoggedAccountSection();
+        setAccountMessage("E-mail verificado. Conta criada com sucesso.");
+        loadMyOrders();
+    } catch (error) {
+        setAccountMessage(error.message || "Falha ao verificar o e-mail.", true);
     }
 }
 
@@ -1078,6 +1144,7 @@ function closeConfirmationModal() {
 function bindAccountForms() {
     const loginForm = document.getElementById("loginForm");
     const registerForm = document.getElementById("registerForm");
+    const verifyRegisterForm = document.getElementById("verifyRegisterForm");
 
     if (loginForm) {
         loginForm.addEventListener("submit", loginAccount);
@@ -1085,6 +1152,10 @@ function bindAccountForms() {
 
     if (registerForm) {
         registerForm.addEventListener("submit", registerAccount);
+    }
+
+    if (verifyRegisterForm) {
+        verifyRegisterForm.addEventListener("submit", verifyRegisterCode);
     }
 }
 

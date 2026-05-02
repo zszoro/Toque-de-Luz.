@@ -371,6 +371,15 @@
                     </div>
                     <button type="submit" class="submit-button">Criar Conta</button>
                 </form>
+
+                <form id="verifyRegisterForm" class="booking-form hidden-form">
+                    <div class="form-group">
+                        <label for="registerCode">Codigo enviado por e-mail</label>
+                        <input type="text" id="registerCode" inputmode="numeric" maxlength="6" required>
+                    </div>
+                    <button type="submit" class="submit-button">Verificar E-mail</button>
+                    <button type="button" class="package-button custom-button" onclick="switchAccountTab('register')">Voltar</button>
+                </form>
             </div>
 
             <div id="accountLoggedSection" class="account-logged-section hidden-form">
