@@ -349,6 +349,7 @@ function normalizeBooking(booking) {
         name: String(booking?.name || "").trim(),
         email: normalizeEmail(booking?.email),
         phone: String(booking?.phone || "").trim(),
+        attendanceLocation: String(booking?.attendanceLocation || "").trim(),
         date: String(booking?.date || "").trim(),
         time: String(booking?.time || "").trim(),
         notes: String(booking?.notes || "").trim()
@@ -639,6 +640,11 @@ async function handleCreatePayment(req, res) {
 
     if (!isValidPhone(booking.phone)) {
         sendJson(res, 400, { error: "Informe um telefone valido com DDD para finalizar." });
+        return;
+    }
+
+    if (!booking.attendanceLocation) {
+        sendJson(res, 400, { error: "Informe onde deseja ser atendido." });
         return;
     }
 

@@ -338,6 +338,7 @@ function buildWhatsAppCheckoutUrl(order) {
         `Nome: ${booking.name}`,
         `E-mail: ${booking.email}`,
         `Telefone: ${booking.phone}`,
+        `Atendimento: ${booking.attendanceLocation}`,
         `Data: ${booking.date}`,
         `Horario: ${booking.time}`,
         booking.notes ? `Observacoes: ${booking.notes}` : ""
@@ -1179,6 +1180,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 name: document.getElementById("checkoutName")?.value?.trim() || "",
                 email: normalizeEmailValue(document.getElementById("checkoutEmail")?.value),
                 phone: normalizePhoneValue(document.getElementById("checkoutPhone")?.value),
+                attendanceLocation: document.querySelector("input[name='attendanceLocation']:checked")?.value || "",
                 date: document.getElementById("checkoutDate")?.value || "",
                 time: document.getElementById("checkoutTime")?.value || "",
                 notes: document.getElementById("checkoutNotes")?.value?.trim() || ""

@@ -297,6 +297,28 @@ body {
     border-color: var(--primary-color);
 }
 
+.attendance-options {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.form-group .attendance-option {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    color: var(--text-dark);
+    font-weight: 500;
+    margin-bottom: 0;
+}
+
+.form-group .attendance-option input {
+    width: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    accent-color: var(--primary-color);
+}
+
 .submit-button {
     width: 100%;
     padding: 15px;

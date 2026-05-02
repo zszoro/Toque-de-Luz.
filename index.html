@@ -84,6 +84,12 @@
                         <p class="price">R$ 100</p>
                         <button class="add-to-cart-btn" onclick="addToCart('Massagem com Equilíbrio de Chakras', 100, '60min')">Adicionar ao Carrinho</button>
                     </div>
+                    <div class="service-card">
+                        <h4>Quiki Massagem</h4>
+                        <p class="duration">30 minutos</p>
+                        <p class="price">R$ 60</p>
+                        <button class="add-to-cart-btn" onclick="addToCart('Quiki Massagem', 60, '30min')">Adicionar ao Carrinho</button>
+                    </div>
                 </div>
             </div>
 
@@ -235,6 +241,13 @@
                         <label>
                             <input type="checkbox" class="service-checkbox" data-name="Massagem com Equilíbrio de Chakras" data-price="100">
                             <span>Massagem com Equilíbrio de Chakras (60min) - R$ 100</span>
+                        </label>
+                        <input type="number" class="quantity-input" min="0" max="10" value="0">
+                    </div>
+                    <div class="modal-service-item">
+                        <label>
+                            <input type="checkbox" class="service-checkbox" data-name="Quiki Massagem" data-price="60">
+                            <span>Quiki Massagem (30min) - R$ 60</span>
                         </label>
                         <input type="number" class="quantity-input" min="0" max="10" value="0">
                     </div>
@@ -465,6 +478,20 @@
                 <div class="form-group">
                     <label for="checkoutPhone">Telefone *</label>
                     <input type="tel" id="checkoutPhone" name="phone" required>
+                </div>
+
+                <div class="form-group attendance-location-group">
+                    <label>Onde voc&ecirc; deseja ser atendido? *</label>
+                    <div class="attendance-options">
+                        <label class="attendance-option">
+                            <input type="radio" name="attendanceLocation" value="Na clinica" required>
+                            <span>Na cl&iacute;nica</span>
+                        </label>
+                        <label class="attendance-option">
+                            <input type="radio" name="attendanceLocation" value="Atendimento a domicilio" required>
+                            <span>atendimento a domic&iacute;lio</span>
+                        </label>
+                    </div>
                 </div>
 
                 <div class="form-row">
