@@ -13,7 +13,7 @@
     --background: #F5F5DC;
     --white: #FFFFFF;
     --shadow: rgba(0, 0, 0, 0.1);
-    --moving-header-bg: linear-gradient(120deg, #587a1b 0%, #6B8E23 28%, #8FBC8F 58%, #DEB887 100%);
+    --moving-header-bg: linear-gradient(120deg, #315f24 0%, #4f7f2a 24%, #6B8E23 48%, #8FBC8F 72%, #d9ead3 100%);
 }
 
 body {
