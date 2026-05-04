@@ -45,6 +45,12 @@ body {
     padding: 1rem 20px;
 }
 
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
 .logo h1 {
     color: var(--white);
     font-size: 1.8rem;
@@ -421,6 +427,16 @@ footer {
 @media (max-width: 768px) {
     .nav-links {
         gap: 1rem;
+    }
+
+    .navbar .container {
+        flex-wrap: wrap;
+        gap: 0.8rem;
+    }
+
+    .logo {
+        width: 100%;
+        justify-content: space-between;
     }
 
     .hero-content h2 {
@@ -1029,6 +1045,17 @@ body.modal-open {
     gap: 0.5rem;
 }
 
+.account-button {
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: 8px;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.92rem;
+}
+
+.account-button:hover {
+    border-color: var(--accent-color);
+}
+
 .account-button.logged-in {
     color: var(--accent-color);
 }
@@ -1275,6 +1302,47 @@ body.modal-open {
     border-top: 2px solid var(--primary-color);
 }
 
+.checkout-account-choice {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 1rem;
+    align-items: center;
+    background-color: #f6fbf4;
+    border: 2px solid var(--secondary-color);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.2rem;
+}
+
+.checkout-account-choice h3 {
+    color: var(--primary-color);
+    margin-bottom: 0.35rem;
+}
+
+.checkout-account-choice p,
+.checkout-account-status {
+    color: #666;
+}
+
+.checkout-account-actions {
+    display: grid;
+    gap: 0.6rem;
+}
+
+.checkout-account-actions .package-button {
+    margin-top: 0;
+}
+
+.checkout-account-status {
+    min-height: 1.35rem;
+    margin-bottom: 0.8rem;
+    font-weight: 700;
+}
+
+.checkout-account-status.success {
+    color: #1e8a42;
+}
+
 /* Responsive Cart */
 @media (max-width: 768px) {
     .cart-sidebar {
@@ -1284,6 +1352,10 @@ body.modal-open {
 
     .cart-button {
         font-size: 0.9rem;
+    }
+
+    .checkout-account-choice {
+        grid-template-columns: 1fr;
     }
 }
 

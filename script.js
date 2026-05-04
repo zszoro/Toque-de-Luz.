@@ -8,6 +8,7 @@ const AUTH_USER_KEY = "toque_de_luz_auth_user";
 
 let authToken = localStorage.getItem(AUTH_TOKEN_KEY) || "";
 let authUser = null;
+let checkoutGuestMode = false;
 
 try {
     const storedUser = localStorage.getItem(AUTH_USER_KEY);
@@ -111,7 +112,7 @@ function updateAccountButtonLabel() {
 function updateAdminEntryVisibility() {
     const adminNavItem = document.getElementById("adminNavItem");
     if (adminNavItem) {
-        adminNavItem.classList.toggle("visible", Boolean(authUser?.isAdmin));
+        adminNavItem.classList.remove("visible");
     }
 }
 
@@ -276,6 +277,7 @@ async function loginAccount(event) {
         showLoggedAccountSection();
         setAccountMessage("Login realizado com sucesso.");
         loadMyOrders();
+        updateCheckoutAccountState();
     } catch (error) {
         setAccountMessage(error.message || "Falha no login.", true);
     }
@@ -308,6 +310,7 @@ async function registerAccount(event) {
         showLoggedAccountSection();
         setAccountMessage("Conta criada com sucesso.");
         loadMyOrders();
+        updateCheckoutAccountState();
     } catch (error) {
         setAccountMessage(error.message || "Falha ao criar conta.", true);
     }
@@ -332,6 +335,7 @@ async function logoutAccount() {
     switchAccountTab("login");
     renderAccountOrders([]);
     setAccountMessage("Sessao encerrada.");
+    updateCheckoutAccountState();
 }
 
 async function refreshAuthState() {
@@ -765,13 +769,45 @@ function prefillCheckoutFromAccount() {
     }
 }
 
+function updateCheckoutAccountState() {
+    const choice = document.getElementById("checkoutAccountChoice");
+    const status = document.getElementById("checkoutAccountStatus");
+
+    if (!choice || !status) return;
+
+    if (authUser) {
+        checkoutGuestMode = false;
+        choice.classList.add("hidden-form");
+        status.textContent = `Pedido vinculado a conta de ${authUser.name || authUser.email}.`;
+        status.classList.add("success");
+        return;
+    }
+
+    choice.classList.toggle("hidden-form", checkoutGuestMode);
+    status.classList.remove("success");
+    status.textContent = checkoutGuestMode
+        ? "Voce continuara sem conta. Preencha os dados abaixo para finalizar."
+        : "";
+}
+
+function openAccountFromCheckout() {
+    openAccountModal();
+}
+
+function continueCheckoutAsGuest() {
+    checkoutGuestMode = true;
+    updateCheckoutAccountState();
+}
+
 function openCheckoutModal() {
     closeCartSidebar();
     prefillCheckoutFromAccount();
+    checkoutGuestMode = false;
 
     const modal = document.getElementById("checkoutModal");
     modal.style.display = "flex";
     document.body.classList.add("modal-open");
+    updateCheckoutAccountState();
 
     const checkoutItems = document.getElementById("checkoutItems");
     const checkoutTotal = document.getElementById("checkoutTotal");

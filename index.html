@@ -12,19 +12,14 @@
             <div class="container">
                 <div class="logo">
                     <h1>✨ Toque de Luz</h1>
+                    <a href="#" id="accountButton" class="account-button" onclick="openAccountModal(event)">
+                        <span id="accountButtonLabel">Minha Conta</span>
+                    </a>
                 </div>
                 <ul class="nav-links">
                     <li><a href="#home">Início</a></li>
                     <li><a href="#services">Serviços</a></li>
                     <li><a href="#contact">Contato</a></li>
-                    <li>
-                        <a href="#" id="accountButton" class="account-button" onclick="openAccountModal(event)">
-                            <span id="accountButtonLabel">Minha Conta</span>
-                        </a>
-                    </li>
-                    <li id="adminNavItem" class="admin-nav-item">
-                        <a href="admin.html">Admin</a>
-                    </li>
                     <li>
                         <a href="#" id="cartButton" class="cart-button" onclick="toggleCart(event)">
                             🛒 Carrinho <span id="cartCount" class="cart-count">0</span>
@@ -441,6 +436,19 @@
                     <span id="checkoutTotal">R$ 0,00</span>
                 </div>
             </div>
+
+            <div id="checkoutAccountChoice" class="checkout-account-choice">
+                <div>
+                    <h3>Quer salvar este pedido?</h3>
+                    <p>Entre ou crie uma conta para acompanhar seus agendamentos. Se preferir, continue sem conta.</p>
+                </div>
+                <div class="checkout-account-actions">
+                    <button type="button" class="package-button" onclick="openAccountFromCheckout()">Entrar ou criar conta</button>
+                    <button type="button" class="package-button custom-button" onclick="continueCheckoutAsGuest()">Continuar sem conta</button>
+                </div>
+            </div>
+
+            <p id="checkoutAccountStatus" class="checkout-account-status"></p>
 
             <form id="checkoutForm" class="booking-form">
                 <div class="form-group">
