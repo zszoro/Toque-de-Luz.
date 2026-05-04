@@ -5,14 +5,14 @@
     "category": "Massagens",
     "name": "Massagem Relaxante",
     "duration": "80 minutos",
-    "price": 1000,
+    "price": 80,
     "active": true,
     "sortOrder": 10,
     "description": "",
     "details": [],
     "featured": false,
     "createdAt": null,
-    "updatedAt": "2026-05-04T21:41:16.624Z"
+    "updatedAt": "2026-05-04T22:24:27.264Z"
   },
   {
     "id": "massagem-oleos-terapeuticos",
