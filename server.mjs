@@ -242,7 +242,7 @@ function resolveMpMode() {
         return MP_MODE_PROD;
     }
 
-    return MP_MODE_TEST;
+    return MP_MODE_PROD;
 }
 
 function getActiveMercadoPagoConfig() {
@@ -508,7 +508,7 @@ async function handleCreatePayment(req, res) {
     const mpConfig = getActiveMercadoPagoConfig();
     if (!mpConfig.accessToken) {
         sendJson(res, 500, {
-            error: `Credencial ausente para modo ${mpConfig.mode}. Configure MP_${mpConfig.mode}_ACCESS_TOKEN no arquivo .env.`
+            error: `Credencial ausente para modo ${mpConfig.mode}. Configure MP_${mpConfig.mode}_ACCESS_TOKEN no Vercel ou no arquivo .env.`
         });
         return;
     }

@@ -1,5 +1,14 @@
 import { saveOrder } from "../lib/db.js";
 
+function getProductionAccessToken() {
+    const prodToken = String(process.env.MP_PROD_ACCESS_TOKEN || "").trim();
+    const legacyToken = String(process.env.ACCESS_TOKEN || "").trim();
+
+    if (prodToken) return prodToken;
+    if (legacyToken && !legacyToken.startsWith("TEST-")) return legacyToken;
+    return "";
+}
+
 export default async function handler(req, res) {
     if (req.method !== "POST") {
         return res.status(405).end();
@@ -7,11 +16,18 @@ export default async function handler(req, res) {
 
     try {
         const { items } = req.body;
+        const accessToken = getProductionAccessToken();
+
+        if (!accessToken) {
+            return res.status(500).json({
+                error: "Credencial de producao ausente. Configure MP_PROD_ACCESS_TOKEN no Vercel."
+            });
+        }
 
         const response = await fetch("https://api.mercadopago.com/checkout/preferences", {
             method: "POST",
             headers: {
-                Authorization: `Bearer ${process.env.ACCESS_TOKEN}`,
+                Authorization: `Bearer ${accessToken}`,
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
