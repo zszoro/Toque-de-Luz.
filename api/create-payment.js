@@ -1,4 +1,5 @@
 import { saveOrder } from "../lib/db.js";
+import { readProducts } from "../lib/catalog.js";
 
 function getProductionAccessToken() {
     const prodToken = String(process.env.MP_PROD_ACCESS_TOKEN || "").trim();
@@ -16,12 +17,31 @@ export default async function handler(req, res) {
 
     try {
         const { items } = req.body;
+        const products = await readProducts();
+        const productsById = new Map(products.map((product) => [String(product.id || ""), product]));
+        const normalizedItems = Array.isArray(items)
+            ? items.map((item) => {
+                const productId = String(item?.productId || item?.id || "").trim();
+                const product = productId ? productsById.get(productId) : null;
+
+                return {
+                    productId: product?.id || productId || null,
+                    name: product ? product.name : String(item?.name || "").trim(),
+                    duration: product ? product.duration : String(item?.duration || ""),
+                    price: product ? Number(product.price || 0) : Number(item?.price || 0)
+                };
+            }).filter((item) => item.name && Number.isFinite(item.price) && item.price > 0)
+            : [];
         const accessToken = getProductionAccessToken();
 
         if (!accessToken) {
             return res.status(500).json({
                 error: "Credencial de producao ausente. Configure MP_PROD_ACCESS_TOKEN no Vercel."
             });
+        }
+
+        if (normalizedItems.length === 0) {
+            return res.status(400).json({ error: "Carrinho vazio ou itens invalidos." });
         }
 
         const response = await fetch("https://api.mercadopago.com/checkout/preferences", {
@@ -31,7 +51,7 @@ export default async function handler(req, res) {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                items: items.map(item => ({
+                items: normalizedItems.map(item => ({
                     title: item.name,
                     quantity: 1,
                     unit_price: item.price
@@ -44,7 +64,7 @@ export default async function handler(req, res) {
         // salva pedido
         saveOrder({
             id: Date.now().toString(),
-            items,
+            items: normalizedItems,
             paymentId: null,
             status: "pending"
         });

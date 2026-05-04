@@ -1,4 +1,6 @@
 let cart = [];
+let products = [];
+let adminProducts = [];
 const CUSTOM_PACKAGE_DISCOUNT = 0.15;
 
 const AUTH_TOKEN_KEY = "toque_de_luz_auth_token";
@@ -19,6 +21,37 @@ function formatCurrency(value) {
         style: "currency",
         currency: "BRL"
     });
+}
+
+function escapeHtml(value) {
+    return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function sortCatalogItems(items) {
+    return [...items].sort((a, b) => {
+        const orderA = Number.isFinite(Number(a.sortOrder)) ? Number(a.sortOrder) : 0;
+        const orderB = Number.isFinite(Number(b.sortOrder)) ? Number(b.sortOrder) : 0;
+        if (orderA !== orderB) return orderA - orderB;
+        return String(a.name || "").localeCompare(String(b.name || ""), "pt-BR");
+    });
+}
+
+function groupByCategory(items) {
+    return sortCatalogItems(items).reduce((groups, item) => {
+        const category = item.category || "Servicos";
+        if (!groups[category]) groups[category] = [];
+        groups[category].push(item);
+        return groups;
+    }, {});
+}
+
+function getProductDuration(product) {
+    return product.duration || (product.type === "package" ? "Pacote" : "");
 }
 
 function getFirstName(fullName) {
@@ -62,6 +95,7 @@ function getAuthHeaders(baseHeaders = {}) {
 function updateAccountButtonLabel() {
     const label = document.getElementById("accountButtonLabel");
     const accountButton = document.getElementById("accountButton");
+    updateAdminEntryVisibility();
     if (!label || !accountButton) return;
 
     if (authUser?.name) {
@@ -72,6 +106,13 @@ function updateAccountButtonLabel() {
 
     label.textContent = "Minha Conta";
     accountButton.classList.remove("logged-in");
+}
+
+function updateAdminEntryVisibility() {
+    const adminNavItem = document.getElementById("adminNavItem");
+    if (adminNavItem) {
+        adminNavItem.classList.toggle("visible", Boolean(authUser?.isAdmin));
+    }
 }
 
 function closeCartSidebar() {
@@ -316,6 +357,125 @@ async function refreshAuthState() {
     }
 }
 
+async function loadProducts() {
+    try {
+        const response = await fetch("/api/products");
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            throw new Error(data.error || "Nao foi possivel carregar produtos.");
+        }
+
+        products = Array.isArray(data.products) ? data.products : [];
+        renderCatalogProducts();
+        renderCustomPackageProducts();
+    } catch (error) {
+        console.warn(error);
+    }
+}
+
+function renderCatalogProducts() {
+    const servicesContainer = document.querySelector("#services .container");
+    if (!servicesContainer) return;
+
+    const activeProducts = products.filter((product) => product.active !== false);
+    const services = activeProducts.filter((product) => product.type !== "package");
+    const packages = activeProducts.filter((product) => product.type === "package");
+    const serviceGroups = groupByCategory(services);
+
+    const serviceSections = Object.entries(serviceGroups).map(([category, items]) => `
+        <div class="service-category">
+            <h3 class="category-title">${escapeHtml(category)}</h3>
+            <div class="service-grid">
+                ${items.map(renderServiceCard).join("")}
+            </div>
+        </div>
+    `).join("");
+
+    servicesContainer.innerHTML = `
+        <h2>Nossos Serviços</h2>
+        ${serviceSections || "<p class='empty-catalog'>Nenhum serviço cadastrado.</p>"}
+        <div class="packages-section">
+            <h3 class="category-title">Pacotes Especiais</h3>
+            <div class="packages-grid">
+                ${packages.map(renderPackageCard).join("")}
+                ${renderCustomPackageCard()}
+            </div>
+        </div>
+    `;
+}
+
+function renderServiceCard(product) {
+    return `
+        <div class="service-card">
+            <h4>${escapeHtml(product.name)}</h4>
+            <p class="duration">${escapeHtml(getProductDuration(product))}</p>
+            <p class="price">${formatCurrency(Number(product.price) || 0)}</p>
+            <button class="add-to-cart-btn" onclick="addProductToCart('${escapeHtml(product.id)}')">Adicionar ao Carrinho</button>
+        </div>
+    `;
+}
+
+function renderPackageCard(product) {
+    const details = Array.isArray(product.details) ? product.details : [];
+    const detailList = details.length
+        ? `<ul class="package-features">${details.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
+        : `<p class="custom-description">${escapeHtml(product.description || "Pacote especial")}</p>`;
+
+    return `
+        <div class="package-card ${product.featured ? "featured" : ""}">
+            <div class="package-header">
+                <h4>${escapeHtml(product.name)}</h4>
+                <p class="package-subtitle">${escapeHtml(product.description || getProductDuration(product))}</p>
+                <p class="package-price">${formatCurrency(Number(product.price) || 0)}</p>
+            </div>
+            ${detailList}
+            <button class="package-button" onclick="addProductToCart('${escapeHtml(product.id)}')">Adicionar ao Carrinho</button>
+        </div>
+    `;
+}
+
+function renderCustomPackageCard() {
+    return `
+        <div class="package-card custom">
+            <div class="package-header">
+                <h4>Personalizado</h4>
+                <p class="package-subtitle">Monte seu próprio pacote</p>
+            </div>
+            <p class="custom-description">Escolha os serviços que mais combinam com você e ganhe desconto especial.</p>
+            <button class="package-button custom-button" onclick="openCustomPackageModal()">Montar Meu Pacote</button>
+        </div>
+    `;
+}
+
+function renderCustomPackageProducts() {
+    const modalServices = document.querySelector("#customPackageModal .modal-services");
+    if (!modalServices) return;
+
+    const services = products.filter((product) => product.active !== false && product.type !== "package");
+    const groups = groupByCategory(services);
+
+    if (services.length === 0) {
+        modalServices.innerHTML = "<p class='empty-catalog'>Nenhum serviço cadastrado para montar pacote.</p>";
+        return;
+    }
+
+    modalServices.innerHTML = Object.entries(groups).map(([category, items]) => `
+        <div class="modal-category">
+            <h3>${escapeHtml(category)}</h3>
+            ${items.map((product) => `
+                <div class="modal-service-item">
+                    <label>
+                        <input type="checkbox" class="service-checkbox" data-name="${escapeHtml(product.name)}" data-price="${Number(product.price) || 0}" data-product-id="${escapeHtml(product.id)}">
+                        <span>${escapeHtml(product.name)} (${escapeHtml(getProductDuration(product))}) - ${formatCurrency(Number(product.price) || 0)}</span>
+                    </label>
+                    <input type="number" class="quantity-input" min="0" max="10" value="0">
+                </div>
+            `).join("")}
+        </div>
+    `).join("");
+}
+
 // ========================
 // ATUALIZAR CARRINHO
 // ========================
@@ -365,10 +525,20 @@ function updateCart() {
 // ========================
 // ADICIONAR AO CARRINHO
 // ========================
-function addToCart(name, price, duration) {
-    cart.push({ name, price, duration });
+function addToCart(name, price, duration, productId = "") {
+    cart.push({ name, price, duration, productId });
     updateCart();
     showNotification(`${name} adicionado ao carrinho`);
+}
+
+function addProductToCart(productId) {
+    const product = products.find((item) => item.id === productId && item.active !== false);
+    if (!product) {
+        showNotification("Produto indisponivel no momento");
+        return;
+    }
+
+    addToCart(product.name, Number(product.price) || 0, getProductDuration(product), product.id);
 }
 
 // ========================
@@ -423,6 +593,17 @@ function showNotification(message) {
 // PACOTES
 // ========================
 function addPackageToCart(type) {
+    const dynamicPackages = {
+        inicial: "pacote-inicial",
+        "bem-estar": "pacote-bem-estar",
+        premium: "pacote-premium"
+    };
+    const dynamicProduct = products.find((product) => product.id === dynamicPackages[type]);
+    if (dynamicProduct) {
+        addProductToCart(dynamicProduct.id);
+        return;
+    }
+
     const packages = {
         inicial: { name: "Pacote Inicial", price: 200 },
         "bem-estar": { name: "Pacote Bem-Estar", price: 350 },
@@ -637,14 +818,287 @@ function bindAccountForms() {
     }
 }
 
+function setAdminMessage(message, isError = false) {
+    const messageEl = document.getElementById("adminMessage");
+    if (!messageEl) return;
+
+    messageEl.textContent = message || "";
+    messageEl.classList.toggle("error", Boolean(message && isError));
+    messageEl.classList.toggle("success", Boolean(message && !isError));
+}
+
+function showAdminLogin() {
+    const loginSection = document.getElementById("adminLoginSection");
+    const panel = document.getElementById("adminPanel");
+
+    if (loginSection) loginSection.classList.remove("hidden-form");
+    if (panel) panel.classList.add("hidden-form");
+}
+
+function showAdminPanel() {
+    const loginSection = document.getElementById("adminLoginSection");
+    const panel = document.getElementById("adminPanel");
+    const userName = document.getElementById("adminUserName");
+
+    if (loginSection) loginSection.classList.add("hidden-form");
+    if (panel) panel.classList.remove("hidden-form");
+    if (userName) {
+        userName.textContent = authUser?.name ? `Logado como ${authUser.name}` : "";
+    }
+}
+
+async function loginAdmin(event) {
+    event.preventDefault();
+    setAdminMessage("");
+
+    const email = document.getElementById("adminEmail")?.value?.trim();
+    const password = document.getElementById("adminPassword")?.value || "";
+
+    try {
+        const response = await fetch("/api/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(data.error || "Nao foi possivel entrar.");
+        }
+
+        if (!data.user?.isAdmin) {
+            await fetch("/api/logout", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${data.token}`
+                }
+            }).catch(() => {});
+            clearAuthState();
+            throw new Error("Esta conta nao tem permissao de admin.");
+        }
+
+        saveAuthState(data.token, data.user);
+        showAdminPanel();
+        await loadAdminProducts();
+    } catch (error) {
+        setAdminMessage(error.message || "Falha no login.", true);
+        showAdminLogin();
+    }
+}
+
+async function loadAdminProducts() {
+    try {
+        const response = await fetch("/api/admin/products", {
+            headers: getAuthHeaders()
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (response.status === 401) {
+            clearAuthState();
+            showAdminLogin();
+            throw new Error(data.error || "Faca login para acessar o painel admin.");
+        }
+
+        if (!response.ok) {
+            throw new Error(data.error || "Nao foi possivel carregar produtos.");
+        }
+
+        adminProducts = Array.isArray(data.products) ? data.products : [];
+        renderAdminProducts();
+        showAdminPanel();
+        setAdminMessage("");
+    } catch (error) {
+        setAdminMessage(error.message || "Falha ao carregar produtos.", true);
+    }
+}
+
+function renderAdminProducts() {
+    const list = document.getElementById("adminProductsList");
+    if (!list) return;
+
+    if (!adminProducts.length) {
+        list.innerHTML = "<p class='empty-catalog'>Nenhum produto cadastrado.</p>";
+        return;
+    }
+
+    list.innerHTML = sortCatalogItems(adminProducts).map((product) => `
+        <article class="admin-product-card ${product.active === false ? "inactive" : ""}">
+            <div class="admin-product-main">
+                <div>
+                    <h3>${escapeHtml(product.name)}</h3>
+                    <p>${escapeHtml(product.category)} • ${escapeHtml(product.type === "package" ? "Pacote" : "Serviço")}</p>
+                </div>
+                <span class="admin-status ${product.active === false ? "inactive" : "active"}">${product.active === false ? "Inativo" : "Ativo"}</span>
+            </div>
+            <div class="admin-product-meta">
+                <span>${formatCurrency(Number(product.price) || 0)}</span>
+                <span>${escapeHtml(getProductDuration(product) || "-")}</span>
+            </div>
+            <div class="admin-product-actions">
+                <button type="button" class="reset-button" onclick="editAdminProduct('${escapeHtml(product.id)}')">Editar</button>
+                <button type="button" class="danger-button" onclick="deleteAdminProduct('${escapeHtml(product.id)}')">Remover</button>
+            </div>
+        </article>
+    `).join("");
+}
+
+function getAdminProductFormPayload() {
+    return {
+        type: document.getElementById("adminProductType")?.value || "service",
+        category: document.getElementById("adminProductCategory")?.value?.trim() || "",
+        name: document.getElementById("adminProductName")?.value?.trim() || "",
+        price: Number(document.getElementById("adminProductPrice")?.value || 0),
+        duration: document.getElementById("adminProductDuration")?.value?.trim() || "",
+        description: document.getElementById("adminProductDescription")?.value?.trim() || "",
+        details: document.getElementById("adminProductDetails")?.value || "",
+        active: Boolean(document.getElementById("adminProductActive")?.checked)
+    };
+}
+
+function resetProductForm() {
+    const form = document.getElementById("productForm");
+    const title = document.getElementById("productFormTitle");
+    const productIdInput = document.getElementById("adminProductId");
+    const activeInput = document.getElementById("adminProductActive");
+
+    if (form) form.reset();
+    if (title) title.textContent = "Adicionar produto";
+    if (productIdInput) productIdInput.value = "";
+    if (activeInput) activeInput.checked = true;
+    setAdminMessage("");
+}
+
+function editAdminProduct(productId) {
+    const product = adminProducts.find((item) => item.id === productId);
+    if (!product) return;
+
+    const setValue = (id, value) => {
+        const input = document.getElementById(id);
+        if (input) input.value = value ?? "";
+    };
+
+    setValue("adminProductId", product.id);
+    setValue("adminProductType", product.type || "service");
+    setValue("adminProductCategory", product.category || "");
+    setValue("adminProductName", product.name || "");
+    setValue("adminProductPrice", Number(product.price || 0));
+    setValue("adminProductDuration", product.duration || "");
+    setValue("adminProductDescription", product.description || "");
+    setValue("adminProductDetails", Array.isArray(product.details) ? product.details.join("\n") : "");
+
+    const activeInput = document.getElementById("adminProductActive");
+    const title = document.getElementById("productFormTitle");
+    if (activeInput) activeInput.checked = product.active !== false;
+    if (title) title.textContent = "Editar produto";
+
+    document.getElementById("productForm")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function saveAdminProduct(event) {
+    event.preventDefault();
+    setAdminMessage("");
+
+    const productId = document.getElementById("adminProductId")?.value || "";
+    const payload = getAdminProductFormPayload();
+    const method = productId ? "PATCH" : "POST";
+    const url = productId ? `/api/admin/products/${encodeURIComponent(productId)}` : "/api/admin/products";
+
+    try {
+        const response = await fetch(url, {
+            method,
+            headers: getAuthHeaders({
+                "Content-Type": "application/json"
+            }),
+            body: JSON.stringify(payload)
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            throw new Error(data.error || "Nao foi possivel salvar o produto.");
+        }
+
+        resetProductForm();
+        await loadAdminProducts();
+        setAdminMessage("Produto salvo. O site ja usa esse catalogo.", false);
+    } catch (error) {
+        setAdminMessage(error.message || "Falha ao salvar produto.", true);
+    }
+}
+
+async function deleteAdminProduct(productId) {
+    const product = adminProducts.find((item) => item.id === productId);
+    if (!product) return;
+
+    const confirmed = window.confirm(`Remover "${product.name}" do site?`);
+    if (!confirmed) return;
+
+    try {
+        const response = await fetch(`/api/admin/products/${encodeURIComponent(productId)}`, {
+            method: "DELETE",
+            headers: getAuthHeaders()
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            throw new Error(data.error || "Nao foi possivel remover o produto.");
+        }
+
+        resetProductForm();
+        await loadAdminProducts();
+        setAdminMessage("Produto removido do site.", false);
+    } catch (error) {
+        setAdminMessage(error.message || "Falha ao remover produto.", true);
+    }
+}
+
+async function initAdminPage() {
+    if (!document.getElementById("adminApp")) return;
+
+    const loginForm = document.getElementById("adminLoginForm");
+    const productForm = document.getElementById("productForm");
+    const clearButton = document.getElementById("clearProductFormButton");
+    const refreshButton = document.getElementById("refreshAdminProductsButton");
+    const logoutButton = document.getElementById("adminLogoutButton");
+
+    if (loginForm) loginForm.addEventListener("submit", loginAdmin);
+    if (productForm) productForm.addEventListener("submit", saveAdminProduct);
+    if (clearButton) clearButton.addEventListener("click", resetProductForm);
+    if (refreshButton) refreshButton.addEventListener("click", loadAdminProducts);
+    if (logoutButton) {
+        logoutButton.addEventListener("click", async () => {
+            await logoutAccount();
+            showAdminLogin();
+        });
+    }
+
+    if (authToken) {
+        await refreshAuthState();
+    }
+
+    if (authUser?.isAdmin) {
+        await loadAdminProducts();
+    } else {
+        showAdminLogin();
+    }
+}
+
 // ========================
 // CONFIRMACAO
 // ========================
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     const form = document.getElementById("checkoutForm");
+    const hasCatalog = document.getElementById("services") || document.getElementById("customPackageModal");
+
+    if (hasCatalog) {
+        await loadProducts();
+    }
+
     bindCustomPackageControls();
     bindAccountForms();
-    refreshAuthState();
+    await refreshAuthState();
+    await initAdminPage();
 
     if (form) {
         form.addEventListener("submit", async (e) => {

@@ -1286,3 +1286,270 @@ body.modal-open {
         font-size: 0.9rem;
     }
 }
+
+.admin-nav-item {
+    display: none;
+}
+
+.admin-nav-item.visible {
+    display: list-item;
+}
+
+.package-price {
+    color: var(--primary-color);
+    font-size: 1.35rem;
+    font-weight: 800;
+    margin-top: 0.75rem;
+}
+
+.empty-catalog {
+    text-align: center;
+    color: #666;
+    padding: 1.5rem;
+}
+
+.admin-page {
+    background-color: #f4f6ef;
+    min-height: 100vh;
+}
+
+.admin-topbar {
+    background-color: var(--white);
+    box-shadow: 0 2px 10px var(--shadow);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.admin-topbar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+.admin-brand,
+.admin-back-link {
+    color: var(--primary-color);
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.admin-back-link {
+    color: var(--text-dark);
+    font-weight: 600;
+}
+
+.admin-shell {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 48px 20px 72px;
+}
+
+.admin-login-section {
+    display: grid;
+    place-items: center;
+    min-height: calc(100vh - 160px);
+}
+
+.admin-login-panel {
+    width: min(100%, 520px);
+    background-color: var(--white);
+    border: 2px solid var(--secondary-color);
+    border-radius: 8px;
+    box-shadow: 0 12px 34px var(--shadow);
+    padding: 2rem;
+}
+
+.admin-login-panel h1,
+.admin-panel-header h1,
+.admin-panel-card h2 {
+    color: var(--primary-color);
+}
+
+.admin-login-panel p,
+.admin-panel-header p {
+    color: #666;
+    margin-top: 0.35rem;
+}
+
+.admin-login-form {
+    box-shadow: none;
+    padding: 0;
+    margin-top: 1.5rem;
+}
+
+.admin-panel-header,
+.admin-list-head,
+.admin-product-main,
+.admin-product-actions,
+.admin-form-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.admin-grid {
+    display: grid;
+    grid-template-columns: minmax(320px, 0.9fr) minmax(420px, 1.1fr);
+    gap: 1.5rem;
+    align-items: start;
+    margin-top: 1.5rem;
+}
+
+.admin-panel-card {
+    background-color: var(--white);
+    border: 2px solid var(--secondary-color);
+    border-radius: 8px;
+    box-shadow: 0 8px 28px var(--shadow);
+    padding: 1.5rem;
+}
+
+.admin-product-form {
+    margin-top: 1.2rem;
+}
+
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin: 0.25rem 0 1.2rem;
+    font-weight: 600;
+}
+
+.checkbox-row input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary-color);
+}
+
+.admin-form-actions .submit-button,
+.admin-form-actions .reset-button {
+    width: auto;
+    flex: 1;
+    margin-top: 0;
+}
+
+.admin-products-list {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1rem;
+    max-height: 720px;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+}
+
+.admin-product-card {
+    border: 1px solid #d7dfce;
+    border-radius: 8px;
+    padding: 1rem;
+    background-color: #fff;
+}
+
+.admin-product-card.inactive {
+    opacity: 0.68;
+    background-color: #f7f7f4;
+}
+
+.admin-product-main h3 {
+    color: var(--text-dark);
+    font-size: 1.05rem;
+}
+
+.admin-product-main p,
+.admin-product-meta {
+    color: #666;
+    font-size: 0.92rem;
+}
+
+.admin-status {
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 0.25rem 0.6rem;
+    text-transform: uppercase;
+}
+
+.admin-status.active {
+    background-color: #eaf7ec;
+    color: #1e8a42;
+}
+
+.admin-status.inactive {
+    background-color: #f2eeee;
+    color: #8a403d;
+}
+
+.admin-product-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0.8rem 0;
+    font-weight: 700;
+}
+
+.danger-button {
+    padding: 12px 18px;
+    background-color: #b2312f;
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+.danger-button:hover {
+    background-color: #8f2523;
+    transform: translateY(-2px);
+}
+
+.admin-product-actions .reset-button,
+.admin-product-actions .danger-button,
+.admin-list-head .reset-button,
+.admin-panel-header .reset-button {
+    width: auto;
+}
+
+.admin-message {
+    min-height: 1.4rem;
+    margin-top: 1rem;
+    font-weight: 700;
+}
+
+.admin-message.success {
+    color: #1e8a42;
+}
+
+.admin-message.error {
+    color: #b2312f;
+}
+
+@media (max-width: 900px) {
+    .admin-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .admin-panel-header,
+    .admin-list-head,
+    .admin-product-main,
+    .admin-product-actions,
+    .admin-form-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .admin-shell {
+        padding-top: 28px;
+    }
+
+    .admin-panel-card,
+    .admin-login-panel {
+        padding: 1rem;
+    }
+}

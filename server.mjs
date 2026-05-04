@@ -9,6 +9,7 @@ const ROOT_DIR = path.dirname(__filename);
 const DATA_DIR = path.join(ROOT_DIR, "data");
 
 const ORDERS_FILE = path.join(DATA_DIR, "orders.json");
+const PRODUCTS_FILE = path.join(DATA_DIR, "products.json");
 const USERS_FILE = path.join(DATA_DIR, "users.json");
 const SESSIONS_FILE = path.join(DATA_DIR, "sessions.json");
 const TUNNEL_URL_FILE = path.join(ROOT_DIR, ".webhook-url");
@@ -34,6 +35,7 @@ const MP_MODE_PROD = "PROD";
 
 loadDotEnv();
 ensureCollectionFile(ORDERS_FILE);
+ensureCollectionFile(PRODUCTS_FILE);
 ensureCollectionFile(USERS_FILE);
 ensureCollectionFile(SESSIONS_FILE);
 
@@ -104,6 +106,14 @@ function writeOrders(orders) {
     writeCollection(ORDERS_FILE, orders);
 }
 
+function readProducts() {
+    return readCollection(PRODUCTS_FILE);
+}
+
+function writeProducts(products) {
+    writeCollection(PRODUCTS_FILE, products);
+}
+
 function readUsers() {
     return readCollection(USERS_FILE);
 }
@@ -153,6 +163,36 @@ function normalizeEmail(email) {
     return String(email || "").trim().toLowerCase();
 }
 
+function normalizeAdminEmails() {
+    return String(process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "")
+        .split(",")
+        .map(normalizeEmail)
+        .filter(Boolean);
+}
+
+function isAdminUser(user) {
+    if (!user) return false;
+    if (String(user.role || "").toLowerCase() === "admin") return true;
+
+    const adminEmails = normalizeAdminEmails();
+    return adminEmails.includes(normalizeEmail(user.email));
+}
+
+function isAdminPassword(password) {
+    const plainPassword = String(process.env.ADMIN_PASSWORD || "");
+    const passwordHash = String(process.env.ADMIN_PASSWORD_HASH || "");
+
+    if (passwordHash) {
+        return hashPassword(password) === passwordHash;
+    }
+
+    if (plainPassword) {
+        return String(password || "") === plainPassword;
+    }
+
+    return false;
+}
+
 function hashPassword(password) {
     return crypto.createHash("sha256").update(String(password || "")).digest("hex");
 }
@@ -162,17 +202,19 @@ function sanitizeUser(user) {
         id: user.id,
         name: user.name,
         email: user.email,
+        isAdmin: isAdminUser(user),
         createdAt: user.createdAt
     };
 }
 
-function createSession(userId) {
+function createSession(userId, userSnapshot = null) {
     const sessions = readSessions();
     const token = crypto.randomBytes(24).toString("hex");
 
     sessions.push({
         token,
         userId,
+        user: userSnapshot ? sanitizeUser(userSnapshot) : null,
         createdAt: new Date().toISOString()
     });
 
@@ -212,7 +254,160 @@ function getUserByToken(token) {
     if (!session) return null;
 
     const user = readUsers().find((item) => item.id === session.userId);
-    return user || null;
+    return user || session.user || null;
+}
+
+function requireAdmin(req, body = null) {
+    const token = getAuthToken(req, body);
+    const user = getUserByToken(token);
+
+    if (!user) {
+        return { error: "Faca login para acessar o painel admin.", statusCode: 401 };
+    }
+
+    if (!isAdminUser(user)) {
+        return { error: "Esta conta nao tem permissao de admin.", statusCode: 403 };
+    }
+
+    return { user };
+}
+
+function slugifyProductName(name) {
+    const normalized = String(name || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+
+    return normalized || `produto-${Date.now()}`;
+}
+
+function createProductId(name, products) {
+    const baseId = slugifyProductName(name);
+    const existingIds = new Set(products.map((product) => product.id));
+
+    if (!existingIds.has(baseId)) return baseId;
+
+    let counter = 2;
+    while (existingIds.has(`${baseId}-${counter}`)) {
+        counter += 1;
+    }
+
+    return `${baseId}-${counter}`;
+}
+
+function sortProducts(products) {
+    return [...products].sort((a, b) => {
+        const orderA = Number.isFinite(Number(a.sortOrder)) ? Number(a.sortOrder) : 0;
+        const orderB = Number.isFinite(Number(b.sortOrder)) ? Number(b.sortOrder) : 0;
+        if (orderA !== orderB) return orderA - orderB;
+
+        return String(a.name || "").localeCompare(String(b.name || ""), "pt-BR");
+    });
+}
+
+function publicProduct(product) {
+    return {
+        id: String(product.id || ""),
+        type: product.type === "package" ? "package" : "service",
+        category: String(product.category || ""),
+        name: String(product.name || ""),
+        duration: String(product.duration || ""),
+        price: Number(product.price || 0),
+        description: String(product.description || ""),
+        details: Array.isArray(product.details) ? product.details.map(String) : [],
+        featured: Boolean(product.featured),
+        active: product.active !== false,
+        sortOrder: Number(product.sortOrder || 0)
+    };
+}
+
+function normalizeDetails(details, fallback = []) {
+    if (Array.isArray(details)) {
+        return details.map((item) => String(item || "").trim()).filter(Boolean);
+    }
+
+    if (typeof details === "string") {
+        return details
+            .split(/\r?\n/)
+            .map((item) => item.trim())
+            .filter(Boolean);
+    }
+
+    return Array.isArray(fallback) ? fallback.map(String).filter(Boolean) : [];
+}
+
+function normalizeProductPayload(payload, existingProduct = {}) {
+    const name = String(payload.name ?? existingProduct.name ?? "").trim();
+    const type = String(payload.type ?? existingProduct.type ?? "service").trim().toLowerCase();
+    const category = String(payload.category ?? existingProduct.category ?? "").trim();
+    const duration = String(payload.duration ?? existingProduct.duration ?? "").trim();
+    const description = String(payload.description ?? existingProduct.description ?? "").trim();
+    const price = Number(payload.price ?? existingProduct.price);
+    const sortOrder = Number(payload.sortOrder ?? existingProduct.sortOrder ?? 0);
+    const featured = payload.featured === undefined
+        ? Boolean(existingProduct.featured)
+        : Boolean(payload.featured);
+    const active = payload.active === undefined
+        ? existingProduct.active !== false
+        : Boolean(payload.active);
+
+    if (name.length < 2) {
+        return { error: "Informe o nome do produto." };
+    }
+
+    if (type !== "service" && type !== "package") {
+        return { error: "Tipo de produto invalido." };
+    }
+
+    if (!category) {
+        return { error: "Informe uma categoria." };
+    }
+
+    if (!Number.isFinite(price) || price < 0) {
+        return { error: "Informe um preco valido." };
+    }
+
+    return {
+        product: {
+            ...existingProduct,
+            type,
+            category,
+            name,
+            duration,
+            price,
+            description,
+            details: normalizeDetails(payload.details, existingProduct.details),
+            featured,
+            active,
+            sortOrder: Number.isFinite(sortOrder) ? sortOrder : Number(existingProduct.sortOrder || 0)
+        }
+    };
+}
+
+function normalizeCartItems(items) {
+    if (!Array.isArray(items)) return [];
+
+    const productsById = new Map(readProducts().map((product) => [String(product.id || ""), product]));
+
+    return items
+        .map((item) => {
+            const productId = String(item?.productId || item?.id || "").trim();
+            const product = productId ? productsById.get(productId) : null;
+
+            const name = product ? product.name : String(item?.name || "").trim();
+            const price = product ? Number(product.price || 0) : Number(item?.price || 0);
+            const duration = product ? String(product.duration || "") : String(item?.duration || "");
+
+            return {
+                productId: product?.id || productId || null,
+                name,
+                price,
+                duration
+            };
+        })
+        .filter((item) => item.name && Number.isFinite(item.price) && item.price > 0);
 }
 
 function normalizeMpMode(rawMode) {
@@ -295,13 +490,11 @@ function isLocalBaseUrl(baseUrl) {
 }
 
 function normalizeItems(items) {
-    if (!Array.isArray(items)) return [];
-
-    return items
+    return normalizeCartItems(items)
         .map((item) => ({
-            title: String(item?.name || "").trim(),
+            title: item.name,
             quantity: 1,
-            unit_price: Number(item?.price || 0)
+            unit_price: item.price
         }))
         .filter((item) => item.title && Number.isFinite(item.unit_price) && item.unit_price > 0);
 }
@@ -433,7 +626,24 @@ async function handleLogin(req, res) {
     }
 
     const email = normalizeEmail(body.email);
-    const passwordHash = hashPassword(body.password);
+    const password = String(body.password || "");
+    const passwordHash = hashPassword(password);
+
+    if (normalizeAdminEmails().includes(email) && isAdminPassword(password)) {
+        const adminUser = {
+            id: `admin_${hashPassword(email).slice(0, 12)}`,
+            name: "Admin Toque de Luz",
+            email,
+            role: "admin",
+            createdAt: null
+        };
+        const token = createSession(adminUser.id, adminUser);
+        sendJson(res, 200, {
+            user: sanitizeUser(adminUser),
+            token
+        });
+        return;
+    }
 
     const users = readUsers();
     const user = users.find((item) => normalizeEmail(item.email) === email);
@@ -521,7 +731,13 @@ async function handleCreatePayment(req, res) {
         return;
     }
 
-    const items = normalizeItems(body.items);
+    const cartItems = normalizeCartItems(body.items);
+    const items = cartItems.map((item) => ({
+        title: item.name,
+        quantity: 1,
+        unit_price: item.price
+    }));
+
     if (items.length === 0) {
         sendJson(res, 400, { error: "Carrinho vazio ou itens invalidos." });
         return;
@@ -582,7 +798,7 @@ async function handleCreatePayment(req, res) {
         const orders = readOrders();
         orders.push({
             id: orderId,
-            items: body.items,
+            items: cartItems,
             booking,
             userId: user?.id || null,
             userEmail: user?.email || booking.email || null,
@@ -745,6 +961,111 @@ function handleOrders(req, res) {
     sendJson(res, 200, readOrders());
 }
 
+function handleProducts(req, res) {
+    if (req.method !== "GET") {
+        sendJson(res, 405, { error: "Metodo nao permitido." });
+        return;
+    }
+
+    const products = sortProducts(readProducts())
+        .filter((product) => product.active !== false)
+        .map(publicProduct);
+
+    sendJson(res, 200, { products });
+}
+
+async function handleAdminProducts(req, res, productId = "") {
+    let body = {};
+
+    if (req.method === "POST" || req.method === "PUT" || req.method === "PATCH") {
+        try {
+            body = await readJsonBody(req);
+        } catch (error) {
+            sendJson(res, 400, { error: error.message });
+            return;
+        }
+    }
+
+    const admin = requireAdmin(req, body);
+    if (admin.error) {
+        sendJson(res, admin.statusCode, { error: admin.error });
+        return;
+    }
+
+    const products = readProducts();
+
+    if (req.method === "GET") {
+        sendJson(res, 200, { products: sortProducts(products).map(publicProduct) });
+        return;
+    }
+
+    if (req.method === "POST") {
+        const normalized = normalizeProductPayload(body);
+        if (normalized.error) {
+            sendJson(res, 400, { error: normalized.error });
+            return;
+        }
+
+        const maxSortOrder = products.reduce((max, product) => {
+            const sortOrder = Number(product.sortOrder || 0);
+            return Number.isFinite(sortOrder) && sortOrder > max ? sortOrder : max;
+        }, 0);
+
+        const product = {
+            id: createProductId(normalized.product.name, products),
+            ...normalized.product,
+            sortOrder: Number.isFinite(Number(body.sortOrder)) ? Number(body.sortOrder) : maxSortOrder + 10,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+
+        products.push(product);
+        writeProducts(sortProducts(products));
+        sendJson(res, 201, { product: publicProduct(product) });
+        return;
+    }
+
+    if (!productId) {
+        sendJson(res, 400, { error: "Informe o produto." });
+        return;
+    }
+
+    const index = products.findIndex((product) => String(product.id || "") === productId);
+    if (index === -1) {
+        sendJson(res, 404, { error: "Produto nao encontrado." });
+        return;
+    }
+
+    if (req.method === "PUT" || req.method === "PATCH") {
+        const normalized = normalizeProductPayload(body, products[index]);
+        if (normalized.error) {
+            sendJson(res, 400, { error: normalized.error });
+            return;
+        }
+
+        const product = {
+            ...normalized.product,
+            id: products[index].id,
+            createdAt: products[index].createdAt || null,
+            updatedAt: new Date().toISOString()
+        };
+
+        products[index] = product;
+        writeProducts(sortProducts(products));
+        sendJson(res, 200, { product: publicProduct(product) });
+        return;
+    }
+
+    if (req.method === "DELETE") {
+        const [removed] = products.splice(index, 1);
+        writeProducts(sortProducts(products));
+        sendJson(res, 200, { ok: true, product: publicProduct(removed) });
+        return;
+    }
+
+    sendJson(res, 405, { error: "Metodo nao permitido." });
+}
+
 function handleMpConfig(req, res) {
     if (req.method !== "GET") {
         sendJson(res, 405, { error: "Metodo nao permitido." });
@@ -792,14 +1113,14 @@ function serveStatic(req, res, pathname) {
     fs.createReadStream(filePath).pipe(res);
 }
 
-const server = http.createServer(async (req, res) => {
+export const server = http.createServer(async (req, res) => {
     const urlObj = new URL(req.url, `http://${req.headers.host}`);
     const { pathname } = urlObj;
 
     if (req.method === "OPTIONS") {
         res.writeHead(204, {
             "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+            "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Account-Token"
         });
         res.end();
@@ -828,6 +1149,19 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname === "/api/my-orders") {
         handleMyOrders(req, res);
+        return;
+    }
+
+    if (pathname === "/api/products") {
+        handleProducts(req, res);
+        return;
+    }
+
+    if (pathname === "/api/admin/products" || pathname.startsWith("/api/admin/products/")) {
+        const productId = pathname.startsWith("/api/admin/products/")
+            ? decodeURIComponent(pathname.slice("/api/admin/products/".length))
+            : "";
+        await handleAdminProducts(req, res, productId);
         return;
     }
 

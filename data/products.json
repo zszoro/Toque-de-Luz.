@@ -1,0 +1,191 @@
+[
+  {
+    "id": "massagem-relaxante",
+    "type": "service",
+    "category": "Massagens",
+    "name": "Massagem Relaxante",
+    "duration": "80 minutos",
+    "price": 1000,
+    "active": true,
+    "sortOrder": 10,
+    "description": "",
+    "details": [],
+    "featured": false,
+    "createdAt": null,
+    "updatedAt": "2026-05-04T21:41:16.624Z"
+  },
+  {
+    "id": "massagem-oleos-terapeuticos",
+    "type": "service",
+    "category": "Massagens",
+    "name": "Massagem com Óleos Terapêuticos",
+    "duration": "60 minutos",
+    "price": 100,
+    "active": true,
+    "sortOrder": 20
+  },
+  {
+    "id": "massagem-equilibrio-chakras",
+    "type": "service",
+    "category": "Massagens",
+    "name": "Massagem com Equilíbrio de Chakras",
+    "duration": "60 minutos",
+    "price": 100,
+    "active": true,
+    "sortOrder": 30
+  },
+  {
+    "id": "quiki-massagem",
+    "type": "service",
+    "category": "Massagens",
+    "name": "Quiki Massagem",
+    "duration": "30 minutos",
+    "price": 60,
+    "active": true,
+    "sortOrder": 40
+  },
+  {
+    "id": "reiki-basico",
+    "type": "service",
+    "category": "Reiki",
+    "name": "Reiki Básico",
+    "duration": "30 minutos",
+    "price": 60,
+    "active": true,
+    "sortOrder": 50
+  },
+  {
+    "id": "reiki-completo",
+    "type": "service",
+    "category": "Reiki",
+    "name": "Reiki Completo",
+    "duration": "50 minutos",
+    "price": 80,
+    "active": true,
+    "sortOrder": 60
+  },
+  {
+    "id": "reiki-aromaterapia",
+    "type": "service",
+    "category": "Reiki",
+    "name": "Reiki com Aromaterapia",
+    "duration": "60 minutos",
+    "price": 100,
+    "active": true,
+    "sortOrder": 70
+  },
+  {
+    "id": "reiki-cristais",
+    "type": "service",
+    "category": "Reiki",
+    "name": "Reiki com Cristais",
+    "duration": "60 minutos",
+    "price": 100,
+    "active": true,
+    "sortOrder": 80
+  },
+  {
+    "id": "reiki-distancia",
+    "type": "service",
+    "category": "Reiki",
+    "name": "Reiki à Distância",
+    "duration": "30 minutos",
+    "price": 50,
+    "active": true,
+    "sortOrder": 90
+  },
+  {
+    "id": "reiki-gestantes",
+    "type": "service",
+    "category": "Reiki",
+    "name": "Reiki para Gestantes",
+    "duration": "50 minutos",
+    "price": 50,
+    "active": true,
+    "sortOrder": 100
+  },
+  {
+    "id": "reiki-pcd",
+    "type": "service",
+    "category": "Reiki",
+    "name": "Reiki para PCD",
+    "duration": "30 minutos",
+    "price": 60,
+    "active": true,
+    "sortOrder": 110
+  },
+  {
+    "id": "reiki-quick-massagem",
+    "type": "service",
+    "category": "Reiki",
+    "name": "Reiki + Quick Massagem",
+    "duration": "50 minutos",
+    "price": 80,
+    "active": true,
+    "sortOrder": 120
+  },
+  {
+    "id": "reiki-animais",
+    "type": "service",
+    "category": "Reiki",
+    "name": "Reiki para Animais",
+    "duration": "20 minutos",
+    "price": 60,
+    "active": true,
+    "sortOrder": 130
+  },
+  {
+    "id": "pacote-inicial",
+    "type": "package",
+    "category": "Pacotes Especiais",
+    "name": "Pacote Inicial",
+    "duration": "Pacote",
+    "price": 200,
+    "description": "Presente de Boas-Vindas",
+    "details": [
+      "2 Massagens Relaxantes",
+      "1 Óleo Essencial",
+      "1 Reiki Básico",
+      "Consulta Avaliativa Gratuita"
+    ],
+    "active": true,
+    "sortOrder": 200
+  },
+  {
+    "id": "pacote-bem-estar",
+    "type": "package",
+    "category": "Pacotes Especiais",
+    "name": "Pacote Bem-Estar",
+    "duration": "Pacote",
+    "price": 350,
+    "description": "Equilíbrio e Harmonia",
+    "details": [
+      "3 Massagens Relaxantes",
+      "2 Óleos Essenciais",
+      "2 Sessões de Reiki Completo",
+      "Kit Aroma para Casa",
+      "Acompanhamento Personalizado"
+    ],
+    "featured": true,
+    "active": true,
+    "sortOrder": 210
+  },
+  {
+    "id": "pacote-premium",
+    "type": "package",
+    "category": "Pacotes Especiais",
+    "name": "Pacote Premium",
+    "duration": "Pacote",
+    "price": 500,
+    "description": "Experiência Completa",
+    "details": [
+      "5 Massagens à Sua Escolha",
+      "Kit com Óleos",
+      "3 Reiki com Cristais",
+      "1 Quick Massagem",
+      "Acompanhamento Ilimitado por 3 Meses"
+    ],
+    "active": true,
+    "sortOrder": 220
+  }
+]

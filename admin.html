@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Toque de Luz</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="admin-page">
+    <header class="admin-topbar">
+        <div class="container admin-topbar-inner">
+            <a class="admin-brand" href="index.html">Toque de Luz</a>
+            <a class="admin-back-link" href="index.html">Voltar ao site</a>
+        </div>
+    </header>
+
+    <main id="adminApp" class="admin-shell">
+        <p id="adminMessage" class="admin-message"></p>
+
+        <section id="adminLoginSection" class="admin-login-section">
+            <div class="admin-login-panel">
+                <h1>Painel Admin</h1>
+                <p>Entre com uma conta autorizada para editar produtos, preços e tempos.</p>
+
+                <form id="adminLoginForm" class="booking-form admin-login-form" onsubmit="loginAdmin(event)">
+                    <div class="form-group">
+                        <label for="adminEmail">E-mail</label>
+                        <input type="email" id="adminEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="adminPassword">Senha</label>
+                        <input type="password" id="adminPassword" minlength="6" required>
+                    </div>
+                    <button type="submit" class="submit-button">Entrar</button>
+                </form>
+            </div>
+        </section>
+
+        <section id="adminPanel" class="admin-panel-wrap hidden-form">
+            <div class="admin-panel-header">
+                <div>
+                    <h1>Produtos</h1>
+                    <p id="adminUserName"></p>
+                </div>
+                <button id="adminLogoutButton" type="button" class="reset-button">Sair</button>
+            </div>
+
+            <div class="admin-grid">
+                <section class="admin-panel-card">
+                    <h2 id="productFormTitle">Adicionar produto</h2>
+
+                    <form id="productForm" class="admin-product-form" onsubmit="saveAdminProduct(event)">
+                        <input type="hidden" id="adminProductId">
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="adminProductType">Tipo</label>
+                                <select id="adminProductType" required>
+                                    <option value="service">Serviço</option>
+                                    <option value="package">Pacote</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="adminProductCategory">Categoria</label>
+                                <input type="text" id="adminProductCategory" list="adminCategoryOptions" required>
+                                <datalist id="adminCategoryOptions">
+                                    <option value="Massagens"></option>
+                                    <option value="Reiki"></option>
+                                    <option value="Pacotes Especiais"></option>
+                                </datalist>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="adminProductName">Nome</label>
+                            <input type="text" id="adminProductName" required>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="adminProductPrice">Preço</label>
+                                <input type="number" id="adminProductPrice" min="0" step="0.01" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="adminProductDuration">Tempo</label>
+                                <input type="text" id="adminProductDuration" placeholder="Ex.: 60 minutos">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="adminProductDescription">Descrição curta</label>
+                            <input type="text" id="adminProductDescription" placeholder="Opcional">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="adminProductDetails">Detalhes</label>
+                            <textarea id="adminProductDetails" rows="5" placeholder="Um detalhe por linha"></textarea>
+                        </div>
+
+                        <label class="checkbox-row">
+                            <input type="checkbox" id="adminProductActive" checked>
+                            <span>Produto ativo no site</span>
+                        </label>
+
+                        <div class="admin-form-actions">
+                            <button type="submit" class="submit-button">Salvar produto</button>
+                            <button type="button" id="clearProductFormButton" class="reset-button">Limpar</button>
+                        </div>
+                    </form>
+                </section>
+
+                <section class="admin-panel-card">
+                    <div class="admin-list-head">
+                        <h2>Produtos cadastrados</h2>
+                        <button type="button" id="refreshAdminProductsButton" class="reset-button">Atualizar</button>
+                    </div>
+                    <div id="adminProductsList" class="admin-products-list"></div>
+                </section>
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js?v=admin-2"></script>
+</body>
+</html>
