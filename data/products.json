@@ -39,10 +39,15 @@
     "type": "service",
     "category": "Massagens",
     "name": "Quiki Massagem",
-    "duration": "30 minutos",
-    "price": 60,
+    "duration": "10 minutos",
+    "price": 30,
     "active": true,
-    "sortOrder": 40
+    "sortOrder": 40,
+    "description": "",
+    "details": [],
+    "featured": false,
+    "createdAt": null,
+    "updatedAt": "2026-05-04T22:27:31.147Z"
   },
   {
     "id": "reiki-basico",
