@@ -192,20 +192,5 @@
     ],
     "active": true,
     "sortOrder": 220
-  },
-  {
-    "id": "teste",
-    "type": "service",
-    "category": "Reiki",
-    "name": "teste",
-    "duration": "10 minutos",
-    "price": 10,
-    "description": "",
-    "details": [],
-    "featured": false,
-    "active": true,
-    "sortOrder": 230,
-    "createdAt": "2026-05-04T22:30:15.033Z",
-    "updatedAt": "2026-05-04T22:30:15.033Z"
   }
 ]
