@@ -152,10 +152,11 @@ export default async function handler(req, res) {
         }
 
         console.error(error);
-        return res.status(500).json({
-            error: "Erro interno ao iniciar pagamento.",
-            stage,
-            message: error.message || "Erro desconhecido"
-        });
+        const payload = { error: "Erro interno ao iniciar pagamento." };
+        if (process.env.PAYMENT_DEBUG === "true") {
+            payload.stage = stage;
+            payload.message = error.message || "Erro desconhecido";
+        }
+        return res.status(500).json(payload);
     }
 }
