@@ -13,7 +13,16 @@ import {
 async function normalizeCartItems(items) {
     if (!Array.isArray(items)) return [];
 
-    const products = await readProducts();
+    const needsCatalog = items.some((item) => String(item?.productId || item?.id || "").trim());
+    let products = [];
+    if (needsCatalog) {
+        try {
+            products = await readProducts();
+        } catch (error) {
+            console.error("Nao foi possivel ler catalogo; usando dados do carrinho.", error);
+        }
+    }
+
     const productsById = new Map(products.map((product) => [String(product.id || ""), product]));
 
     return items
