@@ -142,6 +142,7 @@ export default async function handler(req, res) {
 
         return res.status(200).json({
             init_point: data.init_point,
+            preferenceId: data.id || null,
             orderId,
             mode: mpConfig.mode,
             orderSaved

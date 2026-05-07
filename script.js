@@ -9,6 +9,14 @@ const AUTH_USER_KEY = "toque_de_luz_auth_user";
 let authToken = localStorage.getItem(AUTH_TOKEN_KEY) || "";
 let authUser = null;
 let checkoutGuestMode = false;
+let checkoutPaymentState = {
+    publicKey: "",
+    brickController: null,
+    orderId: "",
+    preferenceId: "",
+    initPoint: "",
+    booking: null
+};
 
 try {
     const storedUser = localStorage.getItem(AUTH_USER_KEY);
@@ -803,6 +811,7 @@ function openCheckoutModal() {
     closeCartSidebar();
     prefillCheckoutFromAccount();
     checkoutGuestMode = false;
+    resetEmbeddedPayment();
 
     const modal = document.getElementById("checkoutModal");
     modal.style.display = "flex";
@@ -835,6 +844,203 @@ function openCheckoutModal() {
 function closeCheckoutModal() {
     document.getElementById("checkoutModal").style.display = "none";
     document.body.classList.remove("modal-open");
+    resetEmbeddedPayment();
+}
+
+function getCheckoutBooking() {
+    return {
+        name: document.getElementById("checkoutName")?.value?.trim() || "",
+        email: document.getElementById("checkoutEmail")?.value?.trim() || "",
+        phone: document.getElementById("checkoutPhone")?.value?.trim() || "",
+        attendanceLocation: document.querySelector("input[name='attendanceLocation']:checked")?.value || "",
+        date: document.getElementById("checkoutDate")?.value || "",
+        time: document.getElementById("checkoutTime")?.value || "",
+        notes: document.getElementById("checkoutNotes")?.value?.trim() || ""
+    };
+}
+
+function getCheckoutTotalAmount() {
+    return cart.reduce((sum, item) => sum + (Number(item.price) || 0), 0);
+}
+
+function setPaymentBrickMessage(message, isError = false) {
+    const messageEl = document.getElementById("paymentBrickMessage");
+    if (!messageEl) return;
+
+    messageEl.textContent = message || "";
+    messageEl.classList.toggle("error", Boolean(message && isError));
+    messageEl.classList.toggle("success", Boolean(message && !isError));
+}
+
+function resetEmbeddedPayment() {
+    if (checkoutPaymentState.brickController?.unmount) {
+        checkoutPaymentState.brickController.unmount();
+    }
+
+    checkoutPaymentState = {
+        publicKey: checkoutPaymentState.publicKey || "",
+        brickController: null,
+        orderId: "",
+        preferenceId: "",
+        initPoint: "",
+        booking: null
+    };
+
+    const section = document.getElementById("embeddedPaymentSection");
+    const container = document.getElementById("paymentBrickContainer");
+    const accountButton = document.getElementById("mercadoPagoAccountButton");
+
+    if (section) section.classList.add("hidden-form");
+    if (container) container.innerHTML = "";
+    if (accountButton) accountButton.disabled = true;
+    setPaymentBrickMessage("");
+}
+
+async function getMercadoPagoPublicKey() {
+    if (checkoutPaymentState.publicKey) return checkoutPaymentState.publicKey;
+
+    const response = await fetch("/api/mp-config");
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.publicKey) {
+        throw new Error("Chave publica do Mercado Pago ausente.");
+    }
+
+    checkoutPaymentState.publicKey = data.publicKey;
+    return data.publicKey;
+}
+
+async function createCheckoutPreference(booking) {
+    const response = await fetch("/api/create-payment", {
+        method: "POST",
+        headers: getAuthHeaders({
+            "Content-Type": "application/json"
+        }),
+        body: JSON.stringify({
+            items: cart,
+            booking,
+            accountToken: authToken || undefined
+        })
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        throw new Error(data.error || "Nao foi possivel iniciar o pagamento.");
+    }
+
+    if (!data.preferenceId || !data.init_point) {
+        throw new Error(data.error || "Resposta invalida do servidor de pagamento.");
+    }
+
+    return data;
+}
+
+async function renderEmbeddedPayment(preferenceData, booking) {
+    const section = document.getElementById("embeddedPaymentSection");
+    const accountButton = document.getElementById("mercadoPagoAccountButton");
+
+    if (section) section.classList.remove("hidden-form");
+    if (accountButton) accountButton.disabled = false;
+
+    checkoutPaymentState.orderId = preferenceData.orderId || "";
+    checkoutPaymentState.preferenceId = preferenceData.preferenceId || "";
+    checkoutPaymentState.initPoint = preferenceData.init_point || "";
+    checkoutPaymentState.booking = booking;
+
+    if (!window.MercadoPago) {
+        setPaymentBrickMessage("Nao foi possivel carregar Pix e cartao. Use a conta Mercado Pago abaixo.", true);
+        return;
+    }
+
+    const publicKey = await getMercadoPagoPublicKey();
+    const mp = new MercadoPago(publicKey, { locale: "pt-BR" });
+    const bricksBuilder = mp.bricks();
+
+    if (checkoutPaymentState.brickController?.unmount) {
+        checkoutPaymentState.brickController.unmount();
+    }
+
+    const settings = {
+        initialization: {
+            amount: getCheckoutTotalAmount(),
+            preferenceId: preferenceData.preferenceId,
+            payer: {
+                email: booking.email
+            }
+        },
+        customization: {
+            paymentMethods: {
+                creditCard: "all",
+                debitCard: "all",
+                bankTransfer: "all",
+                mercadoPago: "none",
+                ticket: "none"
+            }
+        },
+        callbacks: {
+            onReady: () => setPaymentBrickMessage(""),
+            onError: (error) => {
+                console.error(error);
+                setPaymentBrickMessage("Nao foi possivel carregar Pix e cartao.", true);
+            },
+            onSubmit: (submission) => {
+                const formData = submission?.formData || submission || {};
+
+                return new Promise(async (resolve, reject) => {
+                    try {
+                        const response = await fetch("/api/process-payment", {
+                            method: "POST",
+                            headers: getAuthHeaders({
+                                "Content-Type": "application/json"
+                            }),
+                            body: JSON.stringify({
+                                ...formData,
+                                formData,
+                                orderId: checkoutPaymentState.orderId,
+                                preferenceId: checkoutPaymentState.preferenceId,
+                                items: cart,
+                                booking: checkoutPaymentState.booking,
+                                accountToken: authToken || undefined
+                            })
+                        });
+                        const data = await response.json().catch(() => ({}));
+
+                        if (!response.ok) {
+                            throw new Error(data.error || "Nao foi possivel processar o pagamento.");
+                        }
+
+                        setPaymentBrickMessage("Pagamento enviado ao Mercado Pago.");
+
+                        if (["approved", "pending", "in_process"].includes(String(data.status || ""))) {
+                            cart = [];
+                            updateCart();
+                            if (authToken) loadMyOrders();
+                        }
+
+                        resolve(data);
+                    } catch (error) {
+                        console.error(error);
+                        setPaymentBrickMessage(error.message || "Erro no pagamento.", true);
+                        reject(error);
+                    }
+                });
+            }
+        }
+    };
+
+    checkoutPaymentState.brickController = await bricksBuilder.create(
+        "payment",
+        "paymentBrickContainer",
+        settings
+    );
+}
+
+function payWithMercadoPagoAccount() {
+    if (!checkoutPaymentState.initPoint) {
+        setPaymentBrickMessage("Confirme o agendamento antes de pagar.", true);
+        return;
+    }
+
+    window.location.href = checkoutPaymentState.initPoint;
 }
 
 function closeConfirmationModal() {
@@ -1150,43 +1356,20 @@ document.addEventListener("DOMContentLoaded", async () => {
                 submitButton.textContent = "Processando...";
             }
 
-            const booking = {
-                name: document.getElementById("checkoutName")?.value?.trim() || "",
-                email: document.getElementById("checkoutEmail")?.value?.trim() || "",
-                phone: document.getElementById("checkoutPhone")?.value?.trim() || "",
-                attendanceLocation: document.querySelector("input[name='attendanceLocation']:checked")?.value || "",
-                date: document.getElementById("checkoutDate")?.value || "",
-                time: document.getElementById("checkoutTime")?.value || "",
-                notes: document.getElementById("checkoutNotes")?.value?.trim() || ""
-            };
+            const booking = getCheckoutBooking();
 
             try {
-                const response = await fetch("/api/create-payment", {
-                    method: "POST",
-                    headers: getAuthHeaders({
-                        "Content-Type": "application/json"
-                    }),
-                    body: JSON.stringify({
-                        items: cart,
-                        booking,
-                        accountToken: authToken || undefined
-                    })
+                resetEmbeddedPayment();
+                setPaymentBrickMessage("Preparando pagamento...");
+                const data = await createCheckoutPreference(booking);
+                await renderEmbeddedPayment(data, booking);
+                document.getElementById("embeddedPaymentSection")?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start"
                 });
-
-                const data = await response.json().catch(() => ({}));
-
-                if (!response.ok) {
-                    throw new Error(data.error || "Nao foi possivel iniciar o pagamento.");
-                }
-
-                if (data.init_point) {
-                    window.location.href = data.init_point;
-                } else {
-                    throw new Error(data.error || "Resposta invalida do servidor de pagamento.");
-                }
             } catch (error) {
                 console.error(error);
-                alert(error.message || "Erro no pagamento");
+                setPaymentBrickMessage(error.message || "Erro no pagamento", true);
             } finally {
                 if (submitButton) {
                     submitButton.disabled = false;
@@ -1199,5 +1382,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     const checkoutBtn = document.getElementById("checkoutBtn");
     if (checkoutBtn) {
         checkoutBtn.onclick = openCheckoutModal;
+    }
+
+    const mercadoPagoAccountButton = document.getElementById("mercadoPagoAccountButton");
+    if (mercadoPagoAccountButton) {
+        mercadoPagoAccountButton.addEventListener("click", payWithMercadoPagoAccount);
     }
 });

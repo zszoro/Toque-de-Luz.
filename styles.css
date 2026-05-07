@@ -1343,6 +1343,58 @@ body.modal-open {
     color: #1e8a42;
 }
 
+.embedded-payment-section {
+    background-color: var(--white);
+    border: 1px solid #e1e8df;
+    border-radius: 8px;
+    margin-top: 1.5rem;
+    padding: 1.25rem;
+}
+
+.embedded-payment-section h3 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.payment-brick-container {
+    min-height: 240px;
+}
+
+.payment-brick-message {
+    min-height: 1.35rem;
+    margin: 0.75rem 0;
+    color: #1e8a42;
+    font-weight: 700;
+}
+
+.payment-brick-message.error {
+    color: #b3261e;
+}
+
+.mercado-pago-account-button {
+    width: 100%;
+    border: 2px solid #3483fa;
+    border-radius: 8px;
+    background-color: #fff;
+    color: #1d5fc4;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 14px;
+    transition: all 0.3s ease;
+}
+
+.mercado-pago-account-button:hover:not(:disabled) {
+    background-color: #eef5ff;
+    transform: translateY(-1px);
+}
+
+.mercado-pago-account-button:disabled {
+    border-color: #ccc;
+    color: #999;
+    cursor: not-allowed;
+}
+
 /* Responsive Cart */
 @media (max-width: 768px) {
     .cart-sidebar {

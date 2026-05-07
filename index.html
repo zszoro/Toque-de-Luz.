@@ -508,6 +508,15 @@
 
                 <button type="submit" class="submit-button">Confirmar Agendamento</button>
             </form>
+
+            <div id="embeddedPaymentSection" class="embedded-payment-section hidden-form">
+                <h3>Pix ou cart&atilde;o</h3>
+                <div id="paymentBrickContainer" class="payment-brick-container"></div>
+                <p id="paymentBrickMessage" class="payment-brick-message"></p>
+                <button type="button" id="mercadoPagoAccountButton" class="mercado-pago-account-button">
+                    Pagar com conta Mercado Pago
+                </button>
+            </div>
         </div>
     </div>
 
@@ -563,6 +572,7 @@
         </div>
     </footer>
 
+    <script src="https://sdk.mercadopago.com/js/v2"></script>
     <script src="script.js"></script>
 </body>
 </html>

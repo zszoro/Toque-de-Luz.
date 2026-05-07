@@ -17,6 +17,7 @@ export default function handler(req, res) {
         mode: mpConfig.mode,
         hasAccessToken: Boolean(mpConfig.accessToken),
         hasPublicKey: Boolean(mpConfig.publicKey),
+        publicKey: mpConfig.publicKey || null,
         hasKv: Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN),
         ordersDbKey: process.env.ORDERS_DB_KEY || "toque-de-luz:orders:v1",
         appBaseUrl: appBaseUrl || null,
