@@ -44,10 +44,13 @@ async function normalizeCartItems(items) {
 }
 
 export default async function handler(req, res) {
+    let stage = "start";
+
     if (req.method !== "POST") {
         return res.status(405).json({ error: "Metodo nao permitido." });
     }
 
+    stage = "credentials";
     const mpConfig = getActiveMercadoPagoConfig();
     if (!mpConfig.accessToken) {
         return res.status(500).json({
@@ -56,11 +59,13 @@ export default async function handler(req, res) {
     }
 
     try {
+        stage = "normalize-cart";
         const cartItems = await normalizeCartItems(req.body?.items);
         if (cartItems.length === 0) {
             return res.status(400).json({ error: "Carrinho vazio ou itens invalidos." });
         }
 
+        stage = "build-preference";
         const booking = normalizeBooking(req.body?.booking);
         const accountToken = getAuthToken(req, req.body);
         const user = getUserByToken(accountToken);
@@ -104,6 +109,7 @@ export default async function handler(req, res) {
             preferencePayload.auto_return = "approved";
         }
 
+        stage = "mercado-pago";
         const { response, data } = await createPreference(preferencePayload, mpConfig.accessToken);
         if (!response.ok || !data.init_point) {
             return res.status(502).json({
@@ -114,6 +120,7 @@ export default async function handler(req, res) {
 
         let orderSaved = true;
         try {
+            stage = "save-order";
             await saveOrder({
                 id: orderId,
                 items: cartItems,
@@ -145,6 +152,10 @@ export default async function handler(req, res) {
         }
 
         console.error(error);
-        return res.status(500).json({ error: "Erro interno ao iniciar pagamento." });
+        return res.status(500).json({
+            error: "Erro interno ao iniciar pagamento.",
+            stage,
+            message: error.message || "Erro desconhecido"
+        });
     }
 }
