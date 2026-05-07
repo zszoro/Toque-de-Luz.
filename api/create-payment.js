@@ -103,25 +103,32 @@ export default async function handler(req, res) {
             });
         }
 
-        await saveOrder({
-            id: orderId,
-            items: cartItems,
-            booking,
-            userId: user?.id || null,
-            userEmail: user?.email || booking.email || null,
-            paymentId: null,
-            preferenceId: data.id || null,
-            status: "pending",
-            paymentStatus: "pending",
-            mode: mpConfig.mode,
-            total: cartItems.reduce((sum, item) => sum + Number(item.price || 0), 0),
-            createdAt: new Date().toISOString()
-        });
+        let orderSaved = true;
+        try {
+            await saveOrder({
+                id: orderId,
+                items: cartItems,
+                booking,
+                userId: user?.id || null,
+                userEmail: user?.email || booking.email || null,
+                paymentId: null,
+                preferenceId: data.id || null,
+                status: "pending",
+                paymentStatus: "pending",
+                mode: mpConfig.mode,
+                total: cartItems.reduce((sum, item) => sum + Number(item.price || 0), 0),
+                createdAt: new Date().toISOString()
+            });
+        } catch (saveError) {
+            orderSaved = false;
+            console.error("Pagamento criado, mas o pedido nao foi salvo.", saveError);
+        }
 
         return res.status(200).json({
             init_point: data.init_point,
             orderId,
-            mode: mpConfig.mode
+            mode: mpConfig.mode,
+            orderSaved
         });
     } catch (error) {
         if (error.name === "AbortError") {
