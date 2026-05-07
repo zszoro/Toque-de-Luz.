@@ -1,46 +1,45 @@
 import { updateOrder } from "../lib/db.js";
+import { fetchPaymentById, getActiveMercadoPagoConfig } from "../lib/mercadopago.js";
 
-function getProductionAccessToken() {
-    const prodToken = String(process.env.MP_PROD_ACCESS_TOKEN || "").trim();
-    const legacyToken = String(process.env.ACCESS_TOKEN || "").trim();
-
-    if (prodToken) return prodToken;
-    if (legacyToken && !legacyToken.startsWith("TEST-")) return legacyToken;
-    return "";
+function getPaymentId(req) {
+    return req.body?.data?.id
+        || req.body?.id
+        || req.query?.["data.id"]
+        || req.query?.id
+        || "";
 }
 
 export default async function handler(req, res) {
+    if (req.method !== "POST" && req.method !== "GET") {
+        return res.status(405).json({ error: "Metodo nao permitido." });
+    }
+
+    const paymentId = getPaymentId(req);
+    if (!paymentId) {
+        return res.status(200).json({ ok: true });
+    }
+
+    const mpConfig = getActiveMercadoPagoConfig();
+    if (!mpConfig.accessToken) {
+        console.error(`Credencial ausente para modo ${mpConfig.mode}.`);
+        return res.status(200).json({ ok: true });
+    }
+
     try {
-        const paymentId = req.body?.data?.id;
-
-        if (!paymentId) {
+        const { response, payment } = await fetchPaymentById(paymentId, mpConfig.accessToken);
+        if (!response.ok) {
+            console.error("Falha ao consultar pagamento no Mercado Pago.", payment);
             return res.status(200).json({ ok: true });
         }
 
-        const accessToken = getProductionAccessToken();
-        if (!accessToken) {
-            console.error("Credencial de producao ausente. Configure MP_PROD_ACCESS_TOKEN no Vercel.");
-            return res.status(200).json({ ok: true });
-        }
-
-        const response = await fetch(
-            `https://api.mercadopago.com/v1/payments/${paymentId}`,
-            {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`
-                }
-            }
+        await updateOrder(
+            paymentId,
+            payment.status || "pending",
+            payment.external_reference || payment.metadata?.order_id || "",
+            payment
         );
 
-        const payment = await response.json();
-
-        if (payment.status === "approved") {
-            updateOrder(paymentId, "approved");
-            console.log("✅ Pedido aprovado");
-        }
-
         return res.status(200).json({ ok: true });
-
     } catch (error) {
         console.error(error);
         return res.status(200).json({ ok: true });
