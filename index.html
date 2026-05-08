@@ -510,7 +510,22 @@
             </form>
 
             <div id="embeddedPaymentSection" class="embedded-payment-section hidden-form">
-                <h3>Pix ou cart&atilde;o</h3>
+                <h3>Pix</h3>
+                <div class="pix-payment-box">
+                    <button type="button" id="generatePixButton" class="submit-button pix-generate-button">
+                        Gerar QR Code Pix
+                    </button>
+                    <div id="pixResult" class="pix-result hidden-form">
+                        <img id="pixQrCode" class="pix-qr-code" alt="QR Code Pix">
+                        <label for="pixCopyCode">C&oacute;digo Pix copia e cola</label>
+                        <textarea id="pixCopyCode" class="pix-copy-code" rows="4" readonly></textarea>
+                        <button type="button" id="copyPixButton" class="mercado-pago-account-button">
+                            Copiar c&oacute;digo Pix
+                        </button>
+                    </div>
+                </div>
+
+                <h3>Cart&atilde;o de cr&eacute;dito ou d&eacute;bito</h3>
                 <div id="paymentBrickContainer" class="payment-brick-container"></div>
                 <p id="paymentBrickMessage" class="payment-brick-message"></p>
                 <button type="button" id="mercadoPagoAccountButton" class="mercado-pago-account-button">

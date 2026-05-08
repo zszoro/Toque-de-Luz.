@@ -889,10 +889,18 @@ function resetEmbeddedPayment() {
     const section = document.getElementById("embeddedPaymentSection");
     const container = document.getElementById("paymentBrickContainer");
     const accountButton = document.getElementById("mercadoPagoAccountButton");
+    const generatePixButton = document.getElementById("generatePixButton");
+    const pixResult = document.getElementById("pixResult");
+    const pixQrCode = document.getElementById("pixQrCode");
+    const pixCopyCode = document.getElementById("pixCopyCode");
 
     if (section) section.classList.add("hidden-form");
     if (container) container.innerHTML = "";
     if (accountButton) accountButton.disabled = true;
+    if (generatePixButton) generatePixButton.disabled = true;
+    if (pixResult) pixResult.classList.add("hidden-form");
+    if (pixQrCode) pixQrCode.removeAttribute("src");
+    if (pixCopyCode) pixCopyCode.value = "";
     setPaymentBrickMessage("");
 }
 
@@ -937,9 +945,11 @@ async function createCheckoutPreference(booking) {
 async function renderEmbeddedPayment(preferenceData, booking) {
     const section = document.getElementById("embeddedPaymentSection");
     const accountButton = document.getElementById("mercadoPagoAccountButton");
+    const generatePixButton = document.getElementById("generatePixButton");
 
     if (section) section.classList.remove("hidden-form");
     if (accountButton) accountButton.disabled = false;
+    if (generatePixButton) generatePixButton.disabled = false;
 
     checkoutPaymentState.orderId = preferenceData.orderId || "";
     checkoutPaymentState.preferenceId = preferenceData.preferenceId || "";
@@ -970,8 +980,7 @@ async function renderEmbeddedPayment(preferenceData, booking) {
         customization: {
             paymentMethods: {
                 creditCard: "all",
-                debitCard: "all",
-                bankTransfer: "pix"
+                debitCard: "all"
             }
         },
         callbacks: {
@@ -1030,6 +1039,83 @@ async function renderEmbeddedPayment(preferenceData, booking) {
         "paymentBrickContainer",
         settings
     );
+}
+
+async function generatePixPayment() {
+    if (!checkoutPaymentState.orderId || !checkoutPaymentState.booking) {
+        setPaymentBrickMessage("Confirme o agendamento antes de gerar o Pix.", true);
+        return;
+    }
+
+    const generatePixButton = document.getElementById("generatePixButton");
+    const pixResult = document.getElementById("pixResult");
+    const pixQrCode = document.getElementById("pixQrCode");
+    const pixCopyCode = document.getElementById("pixCopyCode");
+    const originalText = generatePixButton ? generatePixButton.textContent : "";
+
+    if (generatePixButton) {
+        generatePixButton.disabled = true;
+        generatePixButton.textContent = "Gerando Pix...";
+    }
+
+    try {
+        const response = await fetch("/api/process-payment", {
+            method: "POST",
+            headers: getAuthHeaders({
+                "Content-Type": "application/json"
+            }),
+            body: JSON.stringify({
+                orderId: checkoutPaymentState.orderId,
+                preferenceId: checkoutPaymentState.preferenceId,
+                items: cart,
+                booking: checkoutPaymentState.booking,
+                accountToken: authToken || undefined,
+                payment_method_id: "pix"
+            })
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            throw new Error(data.error || "Nao foi possivel gerar o Pix.");
+        }
+
+        const qrBase64 = data.pix?.qr_code_base64;
+        const qrCode = data.pix?.qr_code;
+        if (!qrBase64 || !qrCode) {
+            throw new Error("Mercado Pago nao retornou o QR Code Pix.");
+        }
+
+        if (pixQrCode) pixQrCode.src = `data:image/png;base64,${qrBase64}`;
+        if (pixCopyCode) pixCopyCode.value = qrCode;
+        if (pixResult) pixResult.classList.remove("hidden-form");
+        setPaymentBrickMessage("Pix gerado. Pague pelo QR Code ou copie o codigo.");
+    } catch (error) {
+        console.error(error);
+        setPaymentBrickMessage(error.message || "Erro ao gerar Pix.", true);
+    } finally {
+        if (generatePixButton) {
+            generatePixButton.disabled = false;
+            generatePixButton.textContent = originalText;
+        }
+    }
+}
+
+async function copyPixCode() {
+    const pixCopyCode = document.getElementById("pixCopyCode");
+    const code = pixCopyCode?.value || "";
+    if (!code) {
+        setPaymentBrickMessage("Gere o Pix antes de copiar.", true);
+        return;
+    }
+
+    try {
+        await navigator.clipboard.writeText(code);
+        setPaymentBrickMessage("Codigo Pix copiado.");
+    } catch {
+        pixCopyCode?.select();
+        document.execCommand("copy");
+        setPaymentBrickMessage("Codigo Pix copiado.");
+    }
 }
 
 function payWithMercadoPagoAccount() {
@@ -1385,5 +1471,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     const mercadoPagoAccountButton = document.getElementById("mercadoPagoAccountButton");
     if (mercadoPagoAccountButton) {
         mercadoPagoAccountButton.addEventListener("click", payWithMercadoPagoAccount);
+    }
+
+    const generatePixButton = document.getElementById("generatePixButton");
+    if (generatePixButton) {
+        generatePixButton.addEventListener("click", generatePixPayment);
+    }
+
+    const copyPixButton = document.getElementById("copyPixButton");
+    if (copyPixButton) {
+        copyPixButton.addEventListener("click", copyPixCode);
     }
 });

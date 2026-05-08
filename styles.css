@@ -1377,7 +1377,47 @@ body.modal-open {
 
 .embedded-payment-section h3 {
     color: var(--primary-color);
+    margin: 1.25rem 0 1rem;
+}
+
+.embedded-payment-section h3:first-child {
+    margin-top: 0;
+}
+
+.pix-payment-box {
+    border: 1px solid #dce8d7;
+    border-radius: 8px;
     margin-bottom: 1rem;
+    padding: 1rem;
+}
+
+.pix-generate-button {
+    margin-bottom: 1rem;
+}
+
+.pix-result {
+    display: grid;
+    gap: 0.8rem;
+}
+
+.pix-qr-code {
+    border: 1px solid #dce8d7;
+    border-radius: 8px;
+    justify-self: center;
+    max-width: 220px;
+    padding: 0.5rem;
+    width: 100%;
+}
+
+.pix-copy-code {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    color: var(--text-dark);
+    font-size: 0.9rem;
+    line-height: 1.35;
+    padding: 0.8rem;
+    resize: vertical;
+    width: 100%;
 }
 
 .payment-brick-container {

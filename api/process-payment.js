@@ -142,7 +142,14 @@ export default async function handler(req, res) {
             status: payment.status,
             status_detail: payment.status_detail,
             payment_method_id: payment.payment_method_id,
-            point_of_interaction: payment.point_of_interaction || null
+            point_of_interaction: payment.point_of_interaction || null,
+            pix: payment.point_of_interaction?.transaction_data
+                ? {
+                    qr_code: payment.point_of_interaction.transaction_data.qr_code || null,
+                    qr_code_base64: payment.point_of_interaction.transaction_data.qr_code_base64 || null,
+                    ticket_url: payment.point_of_interaction.transaction_data.ticket_url || null
+                }
+                : null
         });
     } catch (error) {
         if (error.name === "AbortError") {
