@@ -1127,22 +1127,22 @@ export const server = http.createServer(async (req, res) => {
         return;
     }
 
-    if (pathname === "/api/register") {
+    if (pathname === "/api/register" || pathname === "/api/auth/register") {
         await handleRegister(req, res);
         return;
     }
 
-    if (pathname === "/api/login") {
+    if (pathname === "/api/login" || pathname === "/api/auth/login") {
         await handleLogin(req, res);
         return;
     }
 
-    if (pathname === "/api/logout") {
+    if (pathname === "/api/logout" || pathname === "/api/auth/logout") {
         handleLogout(req, res);
         return;
     }
 
-    if (pathname === "/api/me") {
+    if (pathname === "/api/me" || pathname === "/api/auth/me") {
         handleMe(req, res);
         return;
     }

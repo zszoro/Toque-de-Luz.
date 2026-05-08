@@ -267,7 +267,7 @@ async function loginAccount(event) {
     const password = document.getElementById("loginPassword")?.value || "";
 
     try {
-        const response = await fetch("/api/login", {
+        const response = await fetch("/api/auth/login", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -300,7 +300,7 @@ async function registerAccount(event) {
     const password = document.getElementById("registerPassword")?.value || "";
 
     try {
-        const response = await fetch("/api/register", {
+        const response = await fetch("/api/auth/register", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -327,7 +327,7 @@ async function registerAccount(event) {
 async function logoutAccount() {
     try {
         if (authToken) {
-            await fetch("/api/logout", {
+            await fetch("/api/auth/logout", {
                 method: "POST",
                 headers: getAuthHeaders({
                     "Content-Type": "application/json"
@@ -352,7 +352,7 @@ async function refreshAuthState() {
     if (!authToken) return;
 
     try {
-        const response = await fetch("/api/me", {
+        const response = await fetch("/api/auth/me", {
             headers: getAuthHeaders()
         });
 
@@ -1097,7 +1097,7 @@ async function loginAdmin(event) {
     const password = document.getElementById("adminPassword")?.value || "";
 
     try {
-        const response = await fetch("/api/login", {
+        const response = await fetch("/api/auth/login", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -1111,7 +1111,7 @@ async function loginAdmin(event) {
         }
 
         if (!data.user?.isAdmin) {
-            await fetch("/api/logout", {
+            await fetch("/api/auth/logout", {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${data.token}`
