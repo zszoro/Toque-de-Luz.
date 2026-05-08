@@ -593,7 +593,7 @@ function showNotification(message) {
 
     const notif = document.createElement("div");
     notif.className = "cart-notification";
-    notif.innerText = message;
+    notif.innerHTML = `<span class="cart-notification-square" aria-hidden="true"></span><span>${escapeHtml(message)}</span>`;
     container.appendChild(notif);
 
     setTimeout(() => {
@@ -971,9 +971,7 @@ async function renderEmbeddedPayment(preferenceData, booking) {
             paymentMethods: {
                 creditCard: "all",
                 debitCard: "all",
-                bankTransfer: "all",
-                mercadoPago: "none",
-                ticket: "none"
+                bankTransfer: "pix"
             }
         },
         callbacks: {
