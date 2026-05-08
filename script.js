@@ -15,7 +15,8 @@ let checkoutPaymentState = {
     orderId: "",
     preferenceId: "",
     initPoint: "",
-    booking: null
+    booking: null,
+    statusTimer: null
 };
 
 try {
@@ -873,6 +874,10 @@ function setPaymentBrickMessage(message, isError = false) {
 }
 
 function resetEmbeddedPayment() {
+    if (checkoutPaymentState.statusTimer) {
+        clearInterval(checkoutPaymentState.statusTimer);
+    }
+
     if (checkoutPaymentState.brickController?.unmount) {
         checkoutPaymentState.brickController.unmount();
     }
@@ -883,7 +888,8 @@ function resetEmbeddedPayment() {
         orderId: "",
         preferenceId: "",
         initPoint: "",
-        booking: null
+        booking: null,
+        statusTimer: null
     };
 
     const section = document.getElementById("embeddedPaymentSection");
@@ -955,6 +961,7 @@ async function renderEmbeddedPayment(preferenceData, booking) {
     checkoutPaymentState.preferenceId = preferenceData.preferenceId || "";
     checkoutPaymentState.initPoint = preferenceData.init_point || "";
     checkoutPaymentState.booking = booking;
+    checkoutPaymentState.statusTimer = null;
 
     if (!window.MercadoPago) {
         setPaymentBrickMessage("Nao foi possivel carregar Pix e cartao. Use a conta Mercado Pago abaixo.", true);
@@ -1017,10 +1024,10 @@ async function renderEmbeddedPayment(preferenceData, booking) {
 
                         setPaymentBrickMessage("Pagamento enviado ao Mercado Pago.");
 
-                        if (["approved", "pending", "in_process"].includes(String(data.status || ""))) {
-                            cart = [];
-                            updateCart();
-                            if (authToken) loadMyOrders();
+                        if (String(data.status || "") === "approved") {
+                            showPurchaseApprovedModal();
+                        } else if (["pending", "in_process"].includes(String(data.status || ""))) {
+                            startPaymentStatusPolling(data.orderId || checkoutPaymentState.orderId);
                         }
 
                         resolve(data);
@@ -1088,7 +1095,8 @@ async function generatePixPayment() {
         if (pixQrCode) pixQrCode.src = `data:image/png;base64,${qrBase64}`;
         if (pixCopyCode) pixCopyCode.value = qrCode;
         if (pixResult) pixResult.classList.remove("hidden-form");
-        setPaymentBrickMessage("Pix gerado. Pague pelo QR Code ou copie o codigo.");
+        setPaymentBrickMessage("Pix gerado. Aguardando confirmacao do pagamento...");
+        startPaymentStatusPolling(data.orderId || checkoutPaymentState.orderId);
     } catch (error) {
         console.error(error);
         setPaymentBrickMessage(error.message || "Erro ao gerar Pix.", true);
@@ -1118,6 +1126,77 @@ async function copyPixCode() {
     }
 }
 
+function showPurchaseApprovedModal() {
+    if (checkoutPaymentState.statusTimer) {
+        clearInterval(checkoutPaymentState.statusTimer);
+        checkoutPaymentState.statusTimer = null;
+    }
+
+    cart = [];
+    updateCart();
+    closeCartSidebar();
+    document.getElementById("checkoutModal").style.display = "none";
+    resetEmbeddedPayment();
+
+    const confirmationModal = document.getElementById("confirmationModal");
+    const modalContent = confirmationModal?.querySelector(".modal-content");
+    const title = confirmationModal?.querySelector("h3");
+    const details = document.getElementById("confirmationDetails");
+    const oldIcon = confirmationModal?.querySelector(".confirmation-icon");
+
+    if (modalContent) modalContent.classList.add("purchase-approved-content");
+    if (oldIcon) oldIcon.remove();
+    if (modalContent && !modalContent.querySelector(".purchase-approved-gif")) {
+        modalContent.insertAdjacentHTML(
+            "afterbegin",
+            '<img class="purchase-approved-gif" src="https://s13.gifyu.com/images/b7gyY.gif" alt="Compra aprovada">'
+        );
+    }
+    if (title) title.textContent = "Compra aprovada";
+    if (details) details.innerHTML = "<p>Obrigado por comprar com a Toque de Luz</p>";
+
+    if (confirmationModal) {
+        confirmationModal.style.display = "flex";
+        document.body.classList.add("modal-open");
+    }
+
+    if (authToken) loadMyOrders();
+}
+
+function startPaymentStatusPolling(orderId) {
+    if (!orderId) return;
+
+    if (checkoutPaymentState.statusTimer) {
+        clearInterval(checkoutPaymentState.statusTimer);
+    }
+
+    let attempts = 0;
+    const checkStatus = async () => {
+        attempts += 1;
+
+        try {
+            const response = await fetch(`/api/payment-status?orderId=${encodeURIComponent(orderId)}`);
+            const data = await response.json().catch(() => ({}));
+
+            if (response.ok && data.approved) {
+                showPurchaseApprovedModal();
+                return;
+            }
+
+            if (attempts >= 180) {
+                clearInterval(checkoutPaymentState.statusTimer);
+                checkoutPaymentState.statusTimer = null;
+                setPaymentBrickMessage("Pagamento ainda pendente. Assim que aprovar, seu pedido sera atualizado.");
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    checkStatus();
+    checkoutPaymentState.statusTimer = setInterval(checkStatus, 5000);
+}
+
 function payWithMercadoPagoAccount() {
     if (!checkoutPaymentState.initPoint) {
         setPaymentBrickMessage("Confirme o agendamento antes de pagar.", true);
@@ -1129,6 +1208,7 @@ function payWithMercadoPagoAccount() {
 
 function closeConfirmationModal() {
     document.getElementById("confirmationModal").style.display = "none";
+    document.body.classList.remove("modal-open");
 }
 
 function bindAccountForms() {

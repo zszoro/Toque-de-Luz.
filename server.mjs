@@ -961,6 +961,60 @@ function handleOrders(req, res) {
     sendJson(res, 200, readOrders());
 }
 
+async function handlePaymentStatus(req, res, urlObj) {
+    if (req.method !== "GET" && req.method !== "POST") {
+        sendJson(res, 405, { error: "Metodo nao permitido." });
+        return;
+    }
+
+    let body = {};
+    if (req.method === "POST") {
+        try {
+            body = await readJsonBody(req);
+        } catch (error) {
+            sendJson(res, 400, { error: error.message });
+            return;
+        }
+    }
+
+    const orderId = String(urlObj.searchParams.get("orderId") || body.orderId || "").trim();
+    if (!orderId) {
+        sendJson(res, 400, { error: "Informe orderId." });
+        return;
+    }
+
+    try {
+        const orders = readOrders();
+        const order = orders.find((item) => String(item.id || "") === orderId);
+
+        if (!order) {
+            sendJson(res, 404, { error: "Pedido nao encontrado." });
+            return;
+        }
+
+        let status = order.status || order.paymentStatus || "pending";
+        const paymentId = order.paymentId || null;
+
+        if (paymentId && status !== "approved") {
+            const { response, payment } = await fetchPaymentById(paymentId, mpConfig.accessToken);
+            if (response.ok) {
+                status = payment.status || status;
+                updateOrderByPayment(orders, payment.id, status, order.id);
+                writeOrders(orders);
+            }
+        }
+
+        sendJson(res, 200, {
+            orderId: order.id,
+            paymentId,
+            status,
+            approved: status === "approved"
+        });
+    } catch (error) {
+        sendJson(res, 500, { error: "Erro interno ao consultar pagamento." });
+    }
+}
+
 function handleProducts(req, res) {
     if (req.method !== "GET") {
         sendJson(res, 405, { error: "Metodo nao permitido." });
@@ -1182,6 +1236,11 @@ export const server = http.createServer(async (req, res) => {
 
     if (pathname === "/api/orders") {
         handleOrders(req, res);
+        return;
+    }
+
+    if (pathname === "/api/payment-status") {
+        await handlePaymentStatus(req, res, urlObj);
         return;
     }
 

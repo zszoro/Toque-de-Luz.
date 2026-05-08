@@ -357,6 +357,29 @@ body {
     color: var(--primary-color);
 }
 
+.purchase-approved-content {
+    max-width: 520px;
+    text-align: center;
+}
+
+.purchase-approved-gif {
+    display: block;
+    margin: 0 auto 1rem;
+    max-width: 180px;
+    width: 60%;
+}
+
+.purchase-approved-content h3 {
+    color: #1e8a42;
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.purchase-approved-content #confirmationDetails {
+    background-color: #f6fbf4;
+    border: 1px solid #cfe5c9;
+}
+
 .reset-button {
     padding: 12px 30px;
     background-color: var(--secondary-color);

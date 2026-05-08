@@ -139,6 +139,7 @@ export default async function handler(req, res) {
 
         return res.status(200).json({
             id: payment.id,
+            orderId: order.id,
             status: payment.status,
             status_detail: payment.status_detail,
             payment_method_id: payment.payment_method_id,
